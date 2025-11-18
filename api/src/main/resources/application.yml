@@ -34,3 +34,11 @@ management:
     health:
       probes:
         enabled: true
+
+app:
+  jwt:
+    # Must be at least 32 bytes. Override with JWT_SECRET outside local development.
+    secret: ${JWT_SECRET:local-development-secret-change-me-0123456789}
+    ttl: ${JWT_TTL:7d}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
