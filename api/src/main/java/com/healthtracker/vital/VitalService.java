@@ -3,6 +3,9 @@ package com.healthtracker.vital;
 import com.healthtracker.common.ApiException;
 import com.healthtracker.common.DateRange;
 import com.healthtracker.common.PageResponse;
+import com.healthtracker.range.Flag;
+import com.healthtracker.range.RangeFlagger;
+import com.healthtracker.range.RangeService;
 import com.healthtracker.user.UserService;
 import com.healthtracker.vital.dto.VitalReadingRequest;
 import com.healthtracker.vital.dto.VitalReadingResponse;
@@ -16,11 +19,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class VitalService {
 
     private final VitalReadingRepository readings;
+    private final RangeService rangeService;
     private final UserService userService;
     private final Clock clock;
 
-    public VitalService(VitalReadingRepository readings, UserService userService, Clock clock) {
+    public VitalService(
+            VitalReadingRepository readings, RangeService rangeService, UserService userService, Clock clock) {
         this.readings = readings;
+        this.rangeService = rangeService;
         this.userService = userService;
         this.clock = clock;
     }
@@ -30,7 +36,7 @@ public class VitalService {
         VitalValidator.validate(request, clock.instant());
         VitalReading reading = new VitalReading(userId, request.type(), clock.instant());
         apply(reading, request);
-        return VitalReadingResponse.from(readings.save(reading));
+        return toResponse(readings.save(reading), rangeService.flaggerFor(userId));
     }
 
     @Transactional
@@ -39,7 +45,7 @@ public class VitalService {
         VitalReading reading = find(userId, id);
         reading.setType(request.type());
         apply(reading, request);
-        return VitalReadingResponse.from(reading);
+        return toResponse(reading, rangeService.flaggerFor(userId));
     }
 
     @Transactional
@@ -49,21 +55,24 @@ public class VitalService {
 
     @Transactional(readOnly = true)
     public VitalReadingResponse get(Long userId, Long id) {
-        return VitalReadingResponse.from(find(userId, id));
+        return toResponse(find(userId, id), rangeService.flaggerFor(userId));
     }
 
     @Transactional(readOnly = true)
     public PageResponse<VitalReadingResponse> list(
-            Long userId, VitalType type, LocalDate from, LocalDate to, int page, int size) {
-        return PageResponse.of(readings(userId, type, from, to), page, size);
+            Long userId, VitalType type, LocalDate from, LocalDate to, boolean flaggedOnly, int page, int size) {
+        return PageResponse.of(readings(userId, type, from, to, flaggedOnly), page, size);
     }
 
-    /** Readings in a date range, newest first. */
+    /** Readings in a date range, newest first, with their flags. */
     @Transactional(readOnly = true)
-    public List<VitalReadingResponse> readings(Long userId, VitalType type, LocalDate from, LocalDate to) {
+    public List<VitalReadingResponse> readings(
+            Long userId, VitalType type, LocalDate from, LocalDate to, boolean flaggedOnly) {
         DateRange range = DateRange.of(from, to, userService.zoneOf(userId));
+        RangeFlagger flagger = rangeService.flaggerFor(userId);
         return readings.findInRange(userId, type, range.start(), range.end()).stream()
-                .map(VitalReadingResponse::from)
+                .map(r -> toResponse(r, flagger))
+                .filter(r -> !flaggedOnly || (r.flag() != null && r.flag().outOfRange()))
                 .toList();
     }
 
@@ -77,6 +86,11 @@ public class VitalService {
         reading.setGlucoseContext(request.glucoseContext());
         reading.setMeasuredAt(request.measuredAt());
         reading.setNotes(blankToNull(request.notes()));
+    }
+
+    static VitalReadingResponse toResponse(VitalReading r, RangeFlagger flagger) {
+        Flag flag = flagger.flag(r.getType(), r.getValue(), r.getSecondaryValue(), r.getGlucoseContext());
+        return VitalReadingResponse.from(r, flag);
     }
 
     private static String blankToNull(String s) {

@@ -1,5 +1,6 @@
 package com.healthtracker.vital.dto;
 
+import com.healthtracker.range.Flag;
 import com.healthtracker.vital.GlucoseContext;
 import com.healthtracker.vital.VitalReading;
 import com.healthtracker.vital.VitalType;
@@ -14,9 +15,10 @@ public record VitalReadingResponse(
         String unit,
         GlucoseContext glucoseContext,
         Instant measuredAt,
-        String notes) {
+        String notes,
+        Flag flag) {
 
-    public static VitalReadingResponse from(VitalReading r) {
+    public static VitalReadingResponse from(VitalReading r, Flag flag) {
         return new VitalReadingResponse(
                 r.getId(),
                 r.getType(),
@@ -25,6 +27,7 @@ public record VitalReadingResponse(
                 r.getType().unit(),
                 r.getGlucoseContext(),
                 r.getMeasuredAt(),
-                r.getNotes());
+                r.getNotes(),
+                flag);
     }
 }

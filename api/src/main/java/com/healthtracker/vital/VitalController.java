@@ -36,9 +36,10 @@ public class VitalController {
             @RequestParam(required = false) VitalType type,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(defaultValue = "false") boolean flagged,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
-        return vitalService.list(user.id(), type, from, to, page, size);
+        return vitalService.list(user.id(), type, from, to, flagged, page, size);
     }
 
     @GetMapping("/{id}")
