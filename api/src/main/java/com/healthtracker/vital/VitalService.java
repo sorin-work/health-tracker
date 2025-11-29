@@ -7,11 +7,18 @@ import com.healthtracker.range.Flag;
 import com.healthtracker.range.RangeFlagger;
 import com.healthtracker.range.RangeService;
 import com.healthtracker.user.UserService;
+import com.healthtracker.vital.dto.TrendPoint;
 import com.healthtracker.vital.dto.VitalReadingRequest;
 import com.healthtracker.vital.dto.VitalReadingResponse;
+import com.healthtracker.vital.dto.VitalSummary;
 import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -74,6 +81,43 @@ public class VitalService {
                 .map(r -> toResponse(r, flagger))
                 .filter(r -> !flaggedOnly || (r.flag() != null && r.flag().outOfRange()))
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<TrendPoint> trend(Long userId, VitalType type, LocalDate from, LocalDate to) {
+        DateRange range = DateRange.of(from, to, userService.zoneOf(userId));
+        List<VitalReading> list = readings.findInRange(userId, type, range.start(), range.end());
+        return TrendAggregator.daily(list, ZoneOffset.UTC, rangeService.flaggerFor(userId));
+    }
+
+    @Transactional(readOnly = true)
+    public List<VitalSummary> summary(Long userId) {
+        RangeFlagger flagger = rangeService.flaggerFor(userId);
+        Instant now = clock.instant();
+        Instant since = now.minus(Duration.ofDays(30));
+        List<VitalSummary> result = new ArrayList<>();
+        for (VitalType type : VitalType.values()) {
+            VitalReadingResponse latest = readings.findFirstByUserIdAndTypeOrderByMeasuredAtDesc(userId, type)
+                    .map(r -> toResponse(r, flagger))
+                    .orElse(null);
+            List<VitalReading> recent = readings.findInRange(userId, type, since, now.plusSeconds(1));
+            int flagged = (int) recent.stream()
+                    .map(r -> flagger.flag(r.getType(), r.getValue(), r.getSecondaryValue(), r.getGlucoseContext()))
+                    .filter(TrendAggregator::isFlagged)
+                    .count();
+            result.add(new VitalSummary(
+                    type,
+                    type.unit(),
+                    latest,
+                    TrendAggregator.average(recent.stream().map(VitalReading::getValue).toList()),
+                    TrendAggregator.average(recent.stream()
+                            .map(VitalReading::getSecondaryValue)
+                            .filter(Objects::nonNull)
+                            .toList()),
+                    recent.size(),
+                    flagged));
+        }
+        return result;
     }
 
     private VitalReading find(Long userId, Long id) {

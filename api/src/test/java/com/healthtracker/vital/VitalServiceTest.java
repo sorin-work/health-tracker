@@ -16,6 +16,7 @@ import com.healthtracker.range.RangeService;
 import com.healthtracker.user.UserService;
 import com.healthtracker.vital.dto.VitalReadingRequest;
 import com.healthtracker.vital.dto.VitalReadingResponse;
+import com.healthtracker.vital.dto.VitalSummary;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
@@ -121,5 +122,29 @@ class VitalServiceTest {
 
         verify(repository).findInRange(
                 1L, null, Instant.parse("2026-01-31T23:00:00Z"), Instant.parse("2026-02-07T23:00:00Z"));
+    }
+
+    @Test
+    void summaryHasAnEntryForEveryType() {
+        when(rangeService.flaggerFor(1L)).thenReturn(RangeFlagger.withDefaults());
+        when(repository.findFirstByUserIdAndTypeOrderByMeasuredAtDesc(eq(1L), any())).thenReturn(Optional.empty());
+        when(repository.findFirstByUserIdAndTypeOrderByMeasuredAtDesc(1L, VitalType.HEART_RATE))
+                .thenReturn(Optional.of(reading(1, VitalType.HEART_RATE, "104", null, NOW)));
+        when(repository.findInRange(eq(1L), any(), any(), any())).thenReturn(List.of());
+        when(repository.findInRange(eq(1L), eq(VitalType.HEART_RATE), any(), any())).thenReturn(List.of(
+                reading(1, VitalType.HEART_RATE, "104", null, NOW),
+                reading(2, VitalType.HEART_RATE, "70", null, NOW.minusSeconds(86400))));
+
+        List<VitalSummary> summary = service.summary(1L);
+
+        assertThat(summary).hasSize(VitalType.values().length);
+        VitalSummary hr = summary.stream().filter(s -> s.type() == VitalType.HEART_RATE).findFirst().orElseThrow();
+        assertThat(hr.latest().flag()).isEqualTo(Flag.HIGH);
+        assertThat(hr.average30d()).isEqualByComparingTo("87.0");
+        assertThat(hr.count30d()).isEqualTo(2);
+        assertThat(hr.flagged30d()).isEqualTo(1);
+        VitalSummary weight = summary.stream().filter(s -> s.type() == VitalType.WEIGHT).findFirst().orElseThrow();
+        assertThat(weight.latest()).isNull();
+        assertThat(weight.average30d()).isNull();
     }
 }

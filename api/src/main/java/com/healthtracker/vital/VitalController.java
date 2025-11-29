@@ -2,10 +2,13 @@ package com.healthtracker.vital;
 
 import com.healthtracker.common.PageResponse;
 import com.healthtracker.security.AuthUser;
+import com.healthtracker.vital.dto.TrendPoint;
 import com.healthtracker.vital.dto.VitalReadingRequest;
 import com.healthtracker.vital.dto.VitalReadingResponse;
+import com.healthtracker.vital.dto.VitalSummary;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
+import java.util.List;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -40,6 +43,20 @@ public class VitalController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
         return vitalService.list(user.id(), type, from, to, flagged, page, size);
+    }
+
+    @GetMapping("/summary")
+    public List<VitalSummary> summary(@AuthenticationPrincipal AuthUser user) {
+        return vitalService.summary(user.id());
+    }
+
+    @GetMapping("/trend")
+    public List<TrendPoint> trend(
+            @AuthenticationPrincipal AuthUser user,
+            @RequestParam VitalType type,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return vitalService.trend(user.id(), type, from, to);
     }
 
     @GetMapping("/{id}")
