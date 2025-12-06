@@ -1,5 +1,6 @@
 package com.healthtracker.medication;
 
+import com.healthtracker.medication.dto.AdherenceResponse;
 import com.healthtracker.medication.dto.DoseResponse;
 import com.healthtracker.security.AuthUser;
 import java.time.LocalDate;
@@ -31,6 +32,14 @@ public class DoseController {
             @AuthenticationPrincipal AuthUser user,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         return doseService.forDay(user.id(), date);
+    }
+
+    @GetMapping("/adherence")
+    public AdherenceResponse adherence(
+            @AuthenticationPrincipal AuthUser user,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return doseService.adherence(user.id(), from, to);
     }
 
     @DeleteMapping("/{logId}")

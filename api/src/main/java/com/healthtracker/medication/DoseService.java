@@ -2,6 +2,9 @@ package com.healthtracker.medication;
 
 import com.healthtracker.common.ApiException;
 import com.healthtracker.common.DateRange;
+import com.healthtracker.medication.dto.AdherenceResponse;
+import com.healthtracker.medication.dto.AdherenceResponse.DailyAdherence;
+import com.healthtracker.medication.dto.AdherenceResponse.MedicationAdherence;
 import com.healthtracker.medication.dto.DoseResponse;
 import com.healthtracker.medication.dto.RecordDoseRequest;
 import com.healthtracker.user.UserService;
@@ -82,6 +85,34 @@ public class DoseService {
     public void undo(Long userId, Long logId) {
         DoseLog log = doseLogs.findByIdAndUserId(logId, userId).orElseThrow(() -> ApiException.notFound("Dose"));
         doseLogs.delete(log);
+    }
+
+    @Transactional(readOnly = true)
+    public AdherenceResponse adherence(Long userId, LocalDate from, LocalDate to) {
+        ZoneId zone = userService.zoneOf(userId);
+        LocalDate today = today(zone);
+        LocalDate end = to != null ? to : today;
+        LocalDate start = from != null ? from : end.minusDays(29);
+        checkRange(start, end);
+
+        List<Medication> meds = medications.findByUserIdOrderByNameAsc(userId).stream()
+                .filter(m -> !m.isAsNeeded())
+                .toList();
+        DateRange range = DateRange.of(start, end, zone);
+        List<DoseLog> logs = doseLogs.findByUserIdAndScheduledAtGreaterThanEqualAndScheduledAtLessThan(
+                userId, range.start(), range.end());
+        List<ScheduledDose> doses = DoseSchedule.expand(meds, logs, start, end, zone, today);
+
+        Map<Long, Medication> byId = meds.stream().collect(Collectors.toMap(Medication::getId, Function.identity()));
+        List<MedicationAdherence> perMedication = new ArrayList<>();
+        AdherenceCalculator.byMedication(doses).forEach((id, stats) ->
+                perMedication.add(new MedicationAdherence(id, byId.get(id).getName(), stats)));
+        perMedication.sort(Comparator.comparing(MedicationAdherence::name, String.CASE_INSENSITIVE_ORDER));
+
+        List<DailyAdherence> daily = new ArrayList<>();
+        AdherenceCalculator.byDay(doses).forEach((day, stats) -> daily.add(new DailyAdherence(day, stats)));
+
+        return new AdherenceResponse(start, end, AdherenceCalculator.summarize(doses), perMedication, daily);
     }
 
     private List<DoseResponse> history(
