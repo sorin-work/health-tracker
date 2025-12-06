@@ -1,7 +1,9 @@
 package com.healthtracker.medication;
 
+import com.healthtracker.medication.dto.DoseResponse;
 import com.healthtracker.medication.dto.MedicationRequest;
 import com.healthtracker.medication.dto.MedicationResponse;
+import com.healthtracker.medication.dto.RecordDoseRequest;
 import com.healthtracker.security.AuthUser;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -23,9 +25,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class MedicationController {
 
     private final MedicationService medicationService;
+    private final DoseService doseService;
 
-    public MedicationController(MedicationService medicationService) {
+    public MedicationController(MedicationService medicationService, DoseService doseService) {
         this.medicationService = medicationService;
+        this.doseService = doseService;
     }
 
     @GetMapping
@@ -61,5 +65,11 @@ public class MedicationController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@AuthenticationPrincipal AuthUser user, @PathVariable Long id) {
         medicationService.delete(user.id(), id);
+    }
+
+    @PostMapping("/{id}/doses")
+    public DoseResponse recordDose(
+            @AuthenticationPrincipal AuthUser user, @PathVariable Long id, @Valid @RequestBody RecordDoseRequest request) {
+        return doseService.record(user.id(), id, request);
     }
 }
