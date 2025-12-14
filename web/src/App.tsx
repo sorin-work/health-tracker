@@ -1,8 +1,20 @@
+import { Navigate, Route, Routes } from 'react-router';
+import { RedirectIfAuthenticated, RequireAuth } from './auth/guards';
+import { DashboardPage } from './pages/DashboardPage';
+import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
+
 export function App() {
   return (
-    <main style={{ fontFamily: 'system-ui, sans-serif', padding: '2rem' }}>
-      <h1>Health Tracker</h1>
-      <p>Vitals, medications and symptoms in one place. Coming soon.</p>
-    </main>
+    <Routes>
+      <Route element={<RedirectIfAuthenticated />}>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+      </Route>
+      <Route element={<RequireAuth />}>
+        <Route index element={<DashboardPage />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }

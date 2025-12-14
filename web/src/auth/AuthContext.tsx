@@ -1,0 +1,77 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import * as authApi from '../api/auth';
+import type { User } from '../api/auth';
+import { getToken, setToken } from '../api/client';
+
+export const ME_QUERY_KEY = ['me'] as const;
+
+interface AuthState {
+  user: User | null;
+  status: 'loading' | 'authenticated' | 'anonymous';
+  login: (email: string, password: string) => Promise<User>;
+  register: (payload: authApi.RegisterPayload) => Promise<User>;
+  logout: () => void;
+}
+
+const AuthContext = createContext<AuthState | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
+  const [hasToken, setHasToken] = useState(() => getToken() !== null);
+
+  const me = useQuery({
+    queryKey: ME_QUERY_KEY,
+    queryFn: authApi.fetchMe,
+    enabled: hasToken,
+    staleTime: Infinity,
+    retry: false,
+  });
+
+  const signOut = useCallback(() => {
+    setToken(null);
+    setHasToken(false);
+    queryClient.clear();
+  }, [queryClient]);
+
+  const signedIn = useCallback(
+    (response: authApi.AuthResponse) => {
+      // Drop anything cached for a previous user before showing the new one.
+      queryClient.clear();
+      setToken(response.token);
+      queryClient.setQueryData(ME_QUERY_KEY, response.user);
+      setHasToken(true);
+      return response.user;
+    },
+    [queryClient],
+  );
+
+  const value = useMemo<AuthState>(() => {
+    const user = hasToken ? (me.data ?? null) : null;
+    let status: AuthState['status'] = 'anonymous';
+    if (user) status = 'authenticated';
+    else if (hasToken && me.isPending) status = 'loading';
+    return {
+      user,
+      status,
+      login: async (email, password) => signedIn(await authApi.login(email, password)),
+      register: async (payload) => signedIn(await authApi.register(payload)),
+      logout: signOut,
+    };
+  }, [hasToken, me.data, me.isPending, signedIn, signOut]);
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth(): AuthState {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used inside <AuthProvider>');
+  return ctx;
+}
+
+/** The signed-in user. Only use inside routes that require authentication. */
+export function useUser(): User {
+  const { user } = useAuth();
+  if (!user) throw new Error('useUser called without a signed-in user');
+  return user;
+}
