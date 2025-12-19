@@ -1,0 +1,75 @@
+import type { Flag, GlucoseContext, VitalReading, VitalType } from '../api/vitals';
+
+export interface VitalMeta {
+  label: string;
+  unit: string;
+  decimals: number;
+  /** Placeholder for the main value input. */
+  placeholder: string;
+}
+
+export const VITAL_META: Record<VitalType, VitalMeta> = {
+  WEIGHT: { label: 'Weight', unit: 'kg', decimals: 1, placeholder: '72.5' },
+  BLOOD_PRESSURE: { label: 'Blood pressure', unit: 'mmHg', decimals: 0, placeholder: '120' },
+  HEART_RATE: { label: 'Heart rate', unit: 'bpm', decimals: 0, placeholder: '64' },
+  BLOOD_GLUCOSE: { label: 'Blood glucose', unit: 'mg/dL', decimals: 0, placeholder: '95' },
+  SLEEP: { label: 'Sleep', unit: 'h', decimals: 1, placeholder: '7.5' },
+};
+
+export const VITAL_TYPES = Object.keys(VITAL_META) as VitalType[];
+
+export const GLUCOSE_CONTEXT_LABELS: Record<GlucoseContext, string> = {
+  FASTING: 'Fasting',
+  BEFORE_MEAL: 'Before a meal',
+  AFTER_MEAL: 'After a meal',
+  BEDTIME: 'Bedtime',
+  RANDOM: 'Random',
+};
+
+export const FLAG_LABELS: Record<Flag, string> = {
+  CRITICAL_LOW: 'Very low',
+  LOW: 'Low',
+  NORMAL: 'In range',
+  HIGH: 'High',
+  CRITICAL_HIGH: 'Very high',
+};
+
+export function isOutOfRange(flag: Flag | undefined | null): boolean {
+  return !!flag && flag !== 'NORMAL';
+}
+
+export function formatNumber(value: number | null | undefined, decimals = 0): string {
+  if (value === null || value === undefined || Number.isNaN(value)) return '–';
+  return value.toLocaleString(undefined, {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+}
+
+/** `128/82`, `82.4`, `7.5` – without the unit. */
+export function formatVitalValue(type: VitalType, value: number, secondary?: number | null): string {
+  const { decimals } = VITAL_META[type];
+  if (type === 'BLOOD_PRESSURE' && secondary !== undefined && secondary !== null) {
+    return `${formatNumber(value, 0)}/${formatNumber(secondary, 0)}`;
+  }
+  return formatNumber(value, decimals);
+}
+
+export function formatReading(reading: Pick<VitalReading, 'type' | 'value' | 'secondaryValue'>): string {
+  return `${formatVitalValue(reading.type, reading.value, reading.secondaryValue)} ${VITAL_META[reading.type].unit}`;
+}
+
+/** 95 -> `1 h 35 min`, 40 -> `40 min` */
+export function formatMinutes(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m === 0 ? `${h} h` : `${h} h ${m} min`;
+}
+
+export function severityLabel(severity: number): string {
+  if (severity <= 3) return 'Mild';
+  if (severity <= 6) return 'Moderate';
+  if (severity <= 8) return 'Severe';
+  return 'Very severe';
+}
