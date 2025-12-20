@@ -4,6 +4,7 @@ import { Layout } from './components/Layout';
 import { DashboardPage } from './pages/DashboardPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { VitalsPage } from './pages/VitalsPage';
 
 export function App() {
   return (
@@ -15,6 +16,7 @@ export function App() {
       <Route element={<RequireAuth />}>
         <Route element={<Layout />}>
           <Route index element={<DashboardPage />} />
+          <Route path="/vitals" element={<VitalsPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

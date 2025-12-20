@@ -7,6 +7,7 @@ import {
   HomeIcon,
   LogoutIcon,
   MenuIcon,
+  PulseIcon,
 } from './icons';
 
 interface NavItem {
@@ -17,6 +18,7 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   { to: '/', label: 'Dashboard', icon: HomeIcon },
+  { to: '/vitals', label: 'Vitals', icon: PulseIcon },
 ];
 
 export function Layout() {
