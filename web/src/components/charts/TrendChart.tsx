@@ -1,0 +1,94 @@
+import {
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ReferenceArea,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import type { TrendPoint, VitalType } from '../../api/vitals';
+import { formatShortDate } from '../../lib/dates';
+import { formatNumber, VITAL_META } from '../../lib/format';
+
+export interface Band {
+  low: number;
+  high: number;
+}
+
+/**
+ * Daily averages for one vital type. The normal range is shaded so out-of-range days stand
+ * out; for blood pressure the diastolic limit is drawn as a dashed line.
+ */
+export function TrendChart({
+  type,
+  points,
+  band,
+  secondaryBand,
+}: {
+  type: VitalType;
+  points: TrendPoint[];
+  band?: Band;
+  secondaryBand?: Band;
+}) {
+  const meta = VITAL_META[type];
+  const isBp = type === 'BLOOD_PRESSURE';
+  const values = points.flatMap((p) => [p.average, p.averageSecondary ?? p.average]);
+  if (band) values.push(band.low, band.high);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const pad = (max - min) * 0.1;
+  const domain = [Math.floor(min - pad), Math.ceil(max + pad)];
+
+  return (
+    <div className="chart" aria-label={`${meta.label} trend`}>
+      <ResponsiveContainer width="100%" height={280}>
+        <LineChart data={points} margin={{ top: 8, right: 16, bottom: 0, left: -8 }}>
+          <CartesianGrid stroke="var(--border)" vertical={false} />
+          <XAxis
+            dataKey="date"
+            tickFormatter={formatShortDate}
+            stroke="var(--text-muted)"
+            fontSize={12}
+            minTickGap={24}
+          />
+          <YAxis domain={domain} stroke="var(--text-muted)" fontSize={12} allowDecimals={type === 'SLEEP' || type === 'WEIGHT'} />
+          {band && (
+            <ReferenceArea y1={band.low} y2={band.high} fill="var(--ok)" fillOpacity={0.08} stroke="none" ifOverflow="extendDomain" />
+          )}
+          {secondaryBand && (
+            <ReferenceLine y={secondaryBand.high} stroke="var(--chart-2)" strokeDasharray="4 4" strokeOpacity={0.6} />
+          )}
+          <Tooltip
+            labelFormatter={(label) => formatShortDate(String(label))}
+            formatter={(value, name) => [`${formatNumber(Number(value), meta.decimals)} ${meta.unit}`, name]}
+            contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8 }}
+          />
+          {isBp && <Legend verticalAlign="top" height={28} iconType="plainline" />}
+          <Line
+            type="monotone"
+            dataKey="average"
+            name={isBp ? 'Systolic' : meta.label}
+            stroke="var(--chart-1)"
+            strokeWidth={2}
+            dot={points.length < 40 ? { r: 3 } : false}
+            activeDot={{ r: 5 }}
+          />
+          {isBp && (
+            <Line
+              type="monotone"
+              dataKey="averageSecondary"
+              name="Diastolic"
+              stroke="var(--chart-2)"
+              strokeWidth={2}
+              dot={points.length < 40 ? { r: 3 } : false}
+            />
+          )}
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}

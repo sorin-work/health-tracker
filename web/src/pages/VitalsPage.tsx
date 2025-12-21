@@ -1,6 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { deleteVital, listVitals, type VitalReading, type VitalType } from '../api/vitals';
+import { deleteVital, listVitals, vitalTrend, type VitalReading, type VitalType } from '../api/vitals';
+import { TrendChart } from '../components/charts/TrendChart';
 import { DateRangePicker } from '../components/DateRangePicker';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorMessage } from '../components/ErrorMessage';
@@ -10,7 +11,7 @@ import { Modal } from '../components/Modal';
 import { PageHeader } from '../components/PageHeader';
 import { VitalForm } from '../components/VitalForm';
 import { formatDateTime, presetRange, type DateRange } from '../lib/dates';
-import { formatVitalValue, GLUCOSE_CONTEXT_LABELS, VITAL_META, VITAL_TYPES } from '../lib/format';
+import { formatNumber, formatVitalValue, GLUCOSE_CONTEXT_LABELS, VITAL_META, VITAL_TYPES } from '../lib/format';
 
 const PAGE_SIZE = 25;
 
@@ -32,6 +33,10 @@ export function VitalsPage() {
     setPage(0);
   }
 
+  const trend = useQuery({
+    queryKey: ['vitals', 'trend', type, range.from, range.to],
+    queryFn: () => vitalTrend(type, range.from, range.to),
+  });
   const readings = useQuery({
     queryKey: ['vitals', 'list', type, range.from, range.to, flaggedOnly, page],
     queryFn: () => listVitals({ type, from: range.from, to: range.to, flagged: flaggedOnly, page, size: PAGE_SIZE }),
@@ -43,6 +48,7 @@ export function VitalsPage() {
   });
 
   const meta = VITAL_META[type];
+  const points = trend.data ?? [];
   const total = readings.data?.total ?? 0;
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -78,6 +84,19 @@ export function VitalsPage() {
             {meta.label} <span className="muted">({meta.unit})</span>
           </h2>
           <DateRangePicker value={range} onChange={(r) => update({ range: r })} />
+        </div>
+        <ErrorMessage error={trend.error} />
+        {points.length > 0 ? (
+          <TrendChart type={type} points={points} />
+        ) : (
+          !trend.isPending && <EmptyState title={`No ${meta.label.toLowerCase()} readings in this period`} />
+        )}
+        {points.length > 0 && <TrendSummary points={points} decimals={meta.decimals} unit={meta.unit} />}
+      </section>
+
+      <section className="card">
+        <div className="card__header">
+          <h2>Readings</h2>
           <label className="checkbox">
             <input type="checkbox" checked={flaggedOnly} onChange={(e) => update({ flagged: e.target.checked })} />
             Out of range only
@@ -156,5 +175,47 @@ export function VitalsPage() {
         </Modal>
       )}
     </>
+  );
+}
+
+function TrendSummary({
+  points,
+  decimals,
+  unit,
+}: {
+  points: { average: number; min: number; max: number; flagged: number; count: number }[];
+  decimals: number;
+  unit: string;
+}) {
+  const count = points.reduce((n, p) => n + p.count, 0);
+  const flagged = points.reduce((n, p) => n + p.flagged, 0);
+  const avg = points.reduce((s, p) => s + p.average * p.count, 0) / count;
+  const min = Math.min(...points.map((p) => p.min));
+  const max = Math.max(...points.map((p) => p.max));
+  return (
+    <dl className="stats-row">
+      <div>
+        <dt>Average</dt>
+        <dd>
+          {formatNumber(avg, decimals)} {unit}
+        </dd>
+      </div>
+      <div>
+        <dt>Lowest</dt>
+        <dd>{formatNumber(min, decimals)}</dd>
+      </div>
+      <div>
+        <dt>Highest</dt>
+        <dd>{formatNumber(max, decimals)}</dd>
+      </div>
+      <div>
+        <dt>Readings</dt>
+        <dd>{count}</dd>
+      </div>
+      <div>
+        <dt>Out of range</dt>
+        <dd className={flagged > 0 ? 'text-warn' : undefined}>{flagged}</dd>
+      </div>
+    </dl>
   );
 }
