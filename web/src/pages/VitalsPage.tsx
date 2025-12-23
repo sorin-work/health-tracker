@@ -1,5 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { useSearchParams } from 'react-router';
 import { deleteVital, listVitals, vitalTrend, type VitalReading, type VitalType } from '../api/vitals';
 import { TrendChart } from '../components/charts/TrendChart';
 import { DateRangePicker } from '../components/DateRangePicker';
@@ -15,21 +16,26 @@ import { formatNumber, formatVitalValue, GLUCOSE_CONTEXT_LABELS, VITAL_META, VIT
 
 const PAGE_SIZE = 25;
 
+function isVitalType(value: string | null): value is VitalType {
+  return !!value && (VITAL_TYPES as string[]).includes(value);
+}
+
 export function VitalsPage() {
   const queryClient = useQueryClient();
-  const [type, setType] = useState<VitalType>('BLOOD_PRESSURE');
-  const [range, setRange] = useState<DateRange>(presetRange('30d'));
-  const [flaggedOnly, setFlaggedOnly] = useState(false);
+  const [params, setParams] = useSearchParams();
+  const type: VitalType = isVitalType(params.get('type')) ? (params.get('type') as VitalType) : 'BLOOD_PRESSURE';
+  const fallback = presetRange('30d');
+  const range: DateRange = { from: params.get('from') ?? fallback.from, to: params.get('to') ?? fallback.to };
+  const flaggedOnly = params.get('flagged') === 'true';
   const [page, setPage] = useState(0);
   const [editing, setEditing] = useState<VitalReading | 'new' | null>(null);
 
+  // Type, range and the flagged filter live in the URL so they survive switching tabs and reloads.
   function update(next: { type?: VitalType; range?: DateRange; flagged?: boolean }) {
-    if (next.type) {
-      setType(next.type);
-      setRange(presetRange('30d'));
-    }
-    if (next.range) setRange(next.range);
-    if (next.flagged !== undefined) setFlaggedOnly(next.flagged);
+    const merged = { type, ...range, flagged: flaggedOnly, ...next, ...(next.range ?? {}) };
+    const search = new URLSearchParams({ type: merged.type, from: merged.from, to: merged.to });
+    if (merged.flagged) search.set('flagged', 'true');
+    setParams(search, { replace: true });
     setPage(0);
   }
 
