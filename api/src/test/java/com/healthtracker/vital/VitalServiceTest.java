@@ -14,6 +14,7 @@ import com.healthtracker.range.Flag;
 import com.healthtracker.range.RangeFlagger;
 import com.healthtracker.range.RangeService;
 import com.healthtracker.user.UserService;
+import com.healthtracker.vital.dto.TrendPoint;
 import com.healthtracker.vital.dto.VitalReadingRequest;
 import com.healthtracker.vital.dto.VitalReadingResponse;
 import com.healthtracker.vital.dto.VitalSummary;
@@ -122,6 +123,20 @@ class VitalServiceTest {
 
         verify(repository).findInRange(
                 1L, null, Instant.parse("2026-01-31T23:00:00Z"), Instant.parse("2026-02-07T23:00:00Z"));
+    }
+
+    @Test
+    void trendIsGroupedByTheUsersTimeZone() {
+        when(userService.zoneOf(1L)).thenReturn(BERLIN);
+        when(rangeService.flaggerFor(1L)).thenReturn(RangeFlagger.withDefaults());
+        when(repository.findInRange(eq(1L), eq(VitalType.WEIGHT), any(), any())).thenReturn(List.of(
+                reading(2, VitalType.WEIGHT, "81.0", null, Instant.parse("2026-02-05T23:30:00Z")),
+                reading(1, VitalType.WEIGHT, "82.0", null, Instant.parse("2026-02-05T06:00:00Z"))));
+
+        List<TrendPoint> trend = service.trend(1L, VitalType.WEIGHT, null, null);
+
+        assertThat(trend).extracting(TrendPoint::date)
+                .containsExactly(LocalDate.of(2026, 2, 5), LocalDate.of(2026, 2, 6));
     }
 
     @Test

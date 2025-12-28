@@ -15,7 +15,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -85,9 +85,10 @@ public class VitalService {
 
     @Transactional(readOnly = true)
     public List<TrendPoint> trend(Long userId, VitalType type, LocalDate from, LocalDate to) {
-        DateRange range = DateRange.of(from, to, userService.zoneOf(userId));
+        ZoneId zone = userService.zoneOf(userId);
+        DateRange range = DateRange.of(from, to, zone);
         List<VitalReading> list = readings.findInRange(userId, type, range.start(), range.end());
-        return TrendAggregator.daily(list, ZoneOffset.UTC, rangeService.flaggerFor(userId));
+        return TrendAggregator.daily(list, zone, rangeService.flaggerFor(userId));
     }
 
     @Transactional(readOnly = true)
