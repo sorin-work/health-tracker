@@ -3,6 +3,7 @@ import { RedirectIfAuthenticated, RequireAuth } from './auth/guards';
 import { Layout } from './components/Layout';
 import { DashboardPage } from './pages/DashboardPage';
 import { LoginPage } from './pages/LoginPage';
+import { MedicationsPage } from './pages/MedicationsPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { VitalsPage } from './pages/VitalsPage';
 
@@ -17,6 +18,7 @@ export function App() {
         <Route element={<Layout />}>
           <Route index element={<DashboardPage />} />
           <Route path="/vitals" element={<VitalsPage />} />
+          <Route path="/medications" element={<MedicationsPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
