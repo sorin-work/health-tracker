@@ -1,6 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { archiveMedication, deleteMedication, dosesForDay, listMedications, type Medication } from '../api/medications';
+import {
+  adherence,
+  archiveMedication,
+  deleteMedication,
+  dosesForDay,
+  listMedications,
+  type AdherenceStats,
+  type Medication,
+} from '../api/medications';
+import { AdherenceChart } from '../components/charts/AdherenceChart';
+import { DateRangePicker } from '../components/DateRangePicker';
 import { DoseList } from '../components/DoseList';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorMessage } from '../components/ErrorMessage';
@@ -8,11 +18,13 @@ import { PlusIcon } from '../components/icons';
 import { MedicationForm } from '../components/MedicationForm';
 import { Modal } from '../components/Modal';
 import { PageHeader } from '../components/PageHeader';
-import { addDays, formatDate, shortTime, today } from '../lib/dates';
+import { ProgressBar } from '../components/ProgressBar';
+import { addDays, formatDate, presetRange, shortTime, today, type DateRange } from '../lib/dates';
 
 export function MedicationsPage() {
   const queryClient = useQueryClient();
   const [day, setDay] = useState(today());
+  const [range, setRange] = useState<DateRange>(presetRange('30d'));
   const [showArchived, setShowArchived] = useState(false);
   const [editing, setEditing] = useState<Medication | 'new' | null>(null);
 
@@ -21,6 +33,10 @@ export function MedicationsPage() {
     queryFn: () => listMedications(showArchived),
   });
   const doses = useQuery({ queryKey: ['doses', day], queryFn: () => dosesForDay(day) });
+  const stats = useQuery({
+    queryKey: ['doses', 'adherence', range.from, range.to],
+    queryFn: () => adherence(range.from, range.to),
+  });
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['medications'] });
@@ -120,11 +136,90 @@ export function MedicationsPage() {
         </section>
       </div>
 
+      <section className="card">
+        <div className="card__header card__header--wrap">
+          <h2>Adherence</h2>
+          <DateRangePicker value={range} onChange={setRange} />
+        </div>
+        <ErrorMessage error={stats.error} />
+        {stats.data && (
+          <>
+            <AdherenceSummary stats={stats.data.overall} />
+            {stats.data.daily.length > 0 && <AdherenceChart daily={stats.data.daily} />}
+            {stats.data.medications.length > 0 && (
+              <div className="table-wrap">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Medication</th>
+                      <th className="num">Taken</th>
+                      <th className="num">Skipped</th>
+                      <th className="num">Missed</th>
+                      <th>Adherence</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stats.data.medications.map((m) => (
+                      <tr key={m.medicationId}>
+                        <td>{m.name}</td>
+                        <td className="num">{m.stats.taken}</td>
+                        <td className="num">{m.stats.skipped}</td>
+                        <td className="num">{m.stats.missed}</td>
+                        <td className="adherence-cell">
+                          <ProgressBar
+                            percent={m.stats.percent ?? 0}
+                            label={`${m.name} adherence`}
+                            tone={adherenceTone(m.stats.percent)}
+                          />
+                          <span>{m.stats.percent === undefined ? '–' : `${m.stats.percent}%`}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
+      </section>
+
       {editing && (
         <Modal title={editing === 'new' ? 'Add medication' : `Edit ${editing.name}`} onClose={() => setEditing(null)}>
           <MedicationForm medication={editing === 'new' ? undefined : editing} onDone={() => setEditing(null)} />
         </Modal>
       )}
     </>
+  );
+}
+
+export function adherenceTone(percent: number | undefined): 'success' | 'warning' | 'default' {
+  if (percent === undefined) return 'default';
+  return percent >= 90 ? 'success' : 'warning';
+}
+
+function AdherenceSummary({ stats }: { stats: AdherenceStats }) {
+  return (
+    <dl className="stats-row">
+      <div>
+        <dt>Adherence</dt>
+        <dd className="stat-large">{stats.percent === undefined ? '–' : `${stats.percent}%`}</dd>
+      </div>
+      <div>
+        <dt>Taken</dt>
+        <dd>{stats.taken}</dd>
+      </div>
+      <div>
+        <dt>Skipped</dt>
+        <dd>{stats.skipped}</dd>
+      </div>
+      <div>
+        <dt>Missed</dt>
+        <dd className={stats.missed > 0 ? 'text-warn' : undefined}>{stats.missed}</dd>
+      </div>
+      <div>
+        <dt>Still due today</dt>
+        <dd>{stats.pending}</dd>
+      </div>
+    </dl>
   );
 }
