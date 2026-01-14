@@ -26,7 +26,7 @@ public final class AdherenceCalculator {
                 case PENDING -> pending++;
             }
         }
-        int due = doses.size();
+        int due = taken + skipped + missed;
         Double percent = due == 0 ? null : Math.round(taken * 1000.0 / due) / 10.0;
         return new AdherenceStats(doses.size(), taken, skipped, missed, pending, percent);
     }

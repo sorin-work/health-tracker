@@ -28,20 +28,30 @@ class AdherenceCalculatorTest {
         }
         doses.add(dose(a, DAY, DoseStatus.SKIPPED));
         doses.add(dose(a, DAY, DoseStatus.MISSED));
+        doses.add(dose(a, DAY, DoseStatus.PENDING));
 
         AdherenceStats stats = AdherenceCalculator.summarize(doses);
 
-        assertThat(stats.scheduled()).isEqualTo(10);
+        assertThat(stats.scheduled()).isEqualTo(11);
         assertThat(stats.taken()).isEqualTo(8);
         assertThat(stats.skipped()).isEqualTo(1);
         assertThat(stats.missed()).isEqualTo(1);
-        assertThat(stats.pending()).isZero();
+        assertThat(stats.pending()).isEqualTo(1);
         assertThat(stats.percent()).isEqualTo(80.0);
     }
 
     @Test
-    void percentIsNullWhenNothingWasScheduled() {
+    void pendingDosesDoNotLowerAdherence() {
+        AdherenceStats stats = AdherenceCalculator.summarize(
+                List.of(dose(a, DAY, DoseStatus.TAKEN), dose(a, DAY, DoseStatus.PENDING)));
+
+        assertThat(stats.percent()).isEqualTo(100.0);
+    }
+
+    @Test
+    void percentIsNullWhenNothingWasDue() {
         assertThat(AdherenceCalculator.summarize(List.of()).percent()).isNull();
+        assertThat(AdherenceCalculator.summarize(List.of(dose(a, DAY, DoseStatus.PENDING))).percent()).isNull();
     }
 
     @Test

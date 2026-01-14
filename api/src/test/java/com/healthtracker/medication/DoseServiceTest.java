@@ -147,7 +147,7 @@ class DoseServiceTest {
     }
 
     @Test
-    void adherenceCountsMissedDoses() {
+    void adherenceCountsMissedDosesButNotTodaysPendingOnes() {
         // Started three days ago, one dose a day at 08:00 and one at 20:00.
         Medication m = scheduled(1, "Metformin", TODAY.minusDays(2), null, "08:00", "20:00");
         when(medications.findByUserIdOrderByNameAsc(1L)).thenReturn(List.of(m));
@@ -158,14 +158,16 @@ class DoseServiceTest {
                         log(3, m, Instant.parse("2026-01-19T07:00:00Z"), DoseStatus.TAKEN),
                         // 19th evening: nothing logged -> missed
                         log(4, m, Instant.parse("2026-01-20T07:00:00Z"), DoseStatus.TAKEN)));
+        // 20th evening is still to come -> pending
 
-        AdherenceResponse adherence = service.adherence(1L, TODAY.minusDays(6), TODAY.minusDays(1));
+        AdherenceResponse adherence = service.adherence(1L, TODAY.minusDays(6), TODAY);
 
-        assertThat(adherence.overall().taken()).isEqualTo(3);
+        assertThat(adherence.overall().taken()).isEqualTo(4);
         assertThat(adherence.overall().missed()).isEqualTo(1);
-        assertThat(adherence.overall().percent()).isEqualTo(75.0);
+        assertThat(adherence.overall().pending()).isEqualTo(1);
+        assertThat(adherence.overall().percent()).isEqualTo(80.0);
         assertThat(adherence.medications()).singleElement().satisfies(ma -> assertThat(ma.name()).isEqualTo("Metformin"));
-        assertThat(adherence.daily()).hasSize(2);
+        assertThat(adherence.daily()).hasSize(3);
     }
 
     @Test
