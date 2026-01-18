@@ -7,6 +7,7 @@ import {
   HomeIcon,
   LogoutIcon,
   MenuIcon,
+  NoteIcon,
   PillIcon,
   PulseIcon,
 } from './icons';
@@ -21,6 +22,7 @@ const NAV: NavItem[] = [
   { to: '/', label: 'Dashboard', icon: HomeIcon },
   { to: '/vitals', label: 'Vitals', icon: PulseIcon },
   { to: '/medications', label: 'Medications', icon: PillIcon },
+  { to: '/symptoms', label: 'Symptoms', icon: NoteIcon },
 ];
 
 export function Layout() {
