@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router';
 import { RedirectIfAuthenticated, RequireAuth } from './auth/guards';
 import { Layout } from './components/Layout';
+import { ActivityPage } from './pages/ActivityPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { LoginPage } from './pages/LoginPage';
 import { MedicationsPage } from './pages/MedicationsPage';
@@ -21,6 +22,7 @@ export function App() {
           <Route path="/vitals" element={<VitalsPage />} />
           <Route path="/medications" element={<MedicationsPage />} />
           <Route path="/symptoms" element={<SymptomsPage />} />
+          <Route path="/activity" element={<ActivityPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
