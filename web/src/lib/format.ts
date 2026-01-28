@@ -1,3 +1,4 @@
+import type { ActivityType } from '../api/activities';
 import type { Flag, GlucoseContext, VitalReading, VitalType } from '../api/vitals';
 
 export interface VitalMeta {
@@ -66,6 +67,17 @@ export function formatMinutes(minutes: number): string {
   const m = minutes % 60;
   return m === 0 ? `${h} h` : `${h} h ${m} min`;
 }
+
+export const ACTIVITY_LABELS: Record<ActivityType, string> = {
+  WALK: 'Walk',
+  RUN: 'Run',
+  CYCLE: 'Cycling',
+  SWIM: 'Swim',
+  STRENGTH: 'Strength',
+  YOGA: 'Yoga',
+  HIIT: 'HIIT',
+  OTHER: 'Other',
+};
 
 export function severityLabel(severity: number): string {
   if (severity <= 3) return 'Mild';
