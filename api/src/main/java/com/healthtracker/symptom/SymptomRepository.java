@@ -13,6 +13,8 @@ public interface SymptomRepository extends JpaRepository<Symptom, Long> {
     List<Symptom> findByUserIdAndOccurredAtGreaterThanEqualAndOccurredAtLessThanOrderByOccurredAtDesc(
             Long userId, Instant start, Instant end);
 
+    Optional<Symptom> findFirstByUserIdAndNameIgnoreCaseOrderByOccurredAtDesc(Long userId, String name);
+
     @Query("select s.name from Symptom s where s.userId = :userId group by s.name order by count(s) desc, s.name")
     List<String> findNamesByFrequency(Long userId);
 }

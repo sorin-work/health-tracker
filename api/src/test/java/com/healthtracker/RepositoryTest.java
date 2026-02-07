@@ -96,6 +96,19 @@ class RepositoryTest {
     }
 
     @Test
+    void findsAnEarlierSymptomIgnoringCase() {
+        Symptom s = new Symptom(userId, Instant.EPOCH);
+        s.setName("Migraine");
+        s.setSeverity(5);
+        s.setOccurredAt(Instant.parse("2026-01-01T10:00:00Z"));
+        symptoms.save(s);
+
+        assertThat(symptoms.findFirstByUserIdAndNameIgnoreCaseOrderByOccurredAtDesc(userId, "MIGRAINE"))
+                .hasValueSatisfying(found -> assertThat(found.getName()).isEqualTo("Migraine"));
+        assertThat(symptoms.findFirstByUserIdAndNameIgnoreCaseOrderByOccurredAtDesc(otherUserId, "migraine")).isEmpty();
+    }
+
+    @Test
     void medicationTimesRoundTripInOrder() {
         Medication m = new Medication(userId, "Metformin", Instant.EPOCH);
         m.setStartDate(LocalDate.of(2026, 1, 1));

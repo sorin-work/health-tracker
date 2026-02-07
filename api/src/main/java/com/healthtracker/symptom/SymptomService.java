@@ -78,11 +78,22 @@ public class SymptomService {
         if (request.occurredAt().isAfter(clock.instant().plusSeconds(600))) {
             throw ApiException.badRequest("Symptoms cannot be logged in the future");
         }
-        symptom.setName(capitalize(request.name().trim()));
+        symptom.setName(canonicalName(symptom.getUserId(), request.name()));
         symptom.setSeverity(request.severity());
         symptom.setOccurredAt(request.occurredAt());
         symptom.setDurationMinutes(request.durationMinutes());
         symptom.setNotes(request.notes() == null || request.notes().isBlank() ? null : request.notes().trim());
+    }
+
+    /**
+     * Reuses the spelling of an earlier entry with the same name, so "HEADACHE" and "headache" end
+     * up as one symptom in the suggestions and charts.
+     */
+    private String canonicalName(Long userId, String raw) {
+        String name = raw.trim().replaceAll("\\s+", " ");
+        return symptoms.findFirstByUserIdAndNameIgnoreCaseOrderByOccurredAtDesc(userId, name)
+                .map(Symptom::getName)
+                .orElseGet(() -> capitalize(name));
     }
 
     /** "headache" and "Headache" should group together in the charts. */
