@@ -1,6 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { deleteActivity, listActivities, weeklyActivity, type Activity } from '../api/activities';
+import { listGoals } from '../api/goals';
 import { ActivityForm } from '../components/ActivityForm';
 import { WeeklyActivityChart } from '../components/charts/WeeklyActivityChart';
 import { EmptyState } from '../components/EmptyState';
@@ -26,6 +27,7 @@ export function ActivityPage() {
     queryFn: () => listActivities({ page, size: PAGE_SIZE }),
     placeholderData: keepPreviousData,
   });
+  const goals = useQuery({ queryKey: ['goals', false], queryFn: () => listGoals(false) });
   const remove = useMutation({
     mutationFn: deleteActivity,
     onSuccess: () => {
@@ -34,6 +36,7 @@ export function ActivityPage() {
     },
   });
 
+  const minutesGoal = goals.data?.find((g) => g.type === 'WEEKLY_ACTIVE_MINUTES')?.targetValue;
   const thisWeek = weekly.data?.at(-1);
   const total = list.data?.total ?? 0;
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -62,7 +65,7 @@ export function ActivityPage() {
           </div>
         </div>
         <ErrorMessage error={weekly.error} />
-        {weekly.data && <WeeklyActivityChart weeks={weekly.data} target={150} />}
+        {weekly.data && <WeeklyActivityChart weeks={weekly.data} target={minutesGoal} />}
         {thisWeek && (
           <dl className="stats-row">
             <div>
