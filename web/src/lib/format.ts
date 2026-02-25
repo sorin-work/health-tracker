@@ -1,4 +1,5 @@
 import type { ActivityType } from '../api/activities';
+import type { GoalType } from '../api/goals';
 import type { Flag, GlucoseContext, VitalReading, VitalType } from '../api/vitals';
 
 export interface VitalMeta {
@@ -77,6 +78,26 @@ export const ACTIVITY_LABELS: Record<ActivityType, string> = {
   YOGA: 'Yoga',
   HIIT: 'HIIT',
   OTHER: 'Other',
+};
+
+export const GOAL_META: Record<GoalType, { label: string; unit: string; describe: (target: number) => string }> = {
+  WEIGHT: { label: 'Target weight', unit: 'kg', describe: (t) => `Reach ${formatNumber(t, 1)} kg` },
+  DAILY_STEPS: {
+    label: 'Daily steps',
+    unit: 'steps',
+    describe: (t) => `Average ${formatNumber(t)} steps a day`,
+  },
+  WEEKLY_ACTIVE_MINUTES: {
+    label: 'Active minutes',
+    unit: 'min',
+    describe: (t) => `${formatNumber(t)} active minutes a week`,
+  },
+  WEEKLY_WORKOUTS: {
+    label: 'Workouts',
+    unit: 'sessions',
+    describe: (t) => `${formatNumber(t)} workouts a week`,
+  },
+  SLEEP_HOURS: { label: 'Sleep', unit: 'h', describe: (t) => `Sleep ${formatNumber(t, 1)} h a night` },
 };
 
 export function severityLabel(severity: number): string {
