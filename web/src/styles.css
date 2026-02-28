@@ -863,6 +863,58 @@ input[type='range'] {
   color: var(--critical);
 }
 
+/* Dashboard */
+
+.vital-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 1rem;
+}
+
+.vital-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 0.9rem 1rem;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.vital-card:hover {
+  border-color: var(--accent);
+  text-decoration: none;
+}
+
+.vital-card__label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.vital-card__value {
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.vital-card__unit {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-left: 0.3rem;
+}
+
+.vital-card__meta {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 /* Modal */
 
 .modal-backdrop {
