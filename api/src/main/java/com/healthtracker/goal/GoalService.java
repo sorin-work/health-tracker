@@ -16,6 +16,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -129,13 +131,17 @@ public class GoalService {
         BigDecimal minutes = BigDecimal.valueOf(recent.stream().mapToInt(Activity::getDurationMinutes).sum());
         BigDecimal workouts = BigDecimal.valueOf(recent.size());
 
-        List<VitalReading> sleep = readings.findInRange(userId, VitalType.SLEEP, windowStart, windowEnd);
-        BigDecimal avgSleep = sleep.isEmpty()
+        // A nap logged on top of the night's sleep belongs to the same day: average per night, not per entry.
+        Map<LocalDate, BigDecimal> sleepPerNight = readings.findInRange(userId, VitalType.SLEEP, windowStart, windowEnd)
+                .stream()
+                .collect(Collectors.groupingBy(
+                        r -> LocalDate.ofInstant(r.getMeasuredAt(), zone),
+                        Collectors.reducing(BigDecimal.ZERO, VitalReading::getValue, BigDecimal::add)));
+        BigDecimal avgSleep = sleepPerNight.isEmpty()
                 ? null
-                : sleep.stream()
-                        .map(VitalReading::getValue)
+                : sleepPerNight.values().stream()
                         .reduce(BigDecimal.ZERO, BigDecimal::add)
-                        .divide(BigDecimal.valueOf(sleep.size()), 1, RoundingMode.HALF_UP);
+                        .divide(BigDecimal.valueOf(sleepPerNight.size()), 1, RoundingMode.HALF_UP);
 
         return new GoalMetrics(weight, steps, minutes, workouts, avgSleep);
     }

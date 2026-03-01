@@ -141,4 +141,24 @@ class GoalServiceTest {
                         1L, 3L, new GoalRequest(GoalType.SLEEP_HOURS, new BigDecimal("8"), null, null, null)))
                 .hasMessageContaining("cannot be changed");
     }
+
+    private static VitalReading sleep(String hours, String wokeUpAt) {
+        VitalReading r = new VitalReading(1L, VitalType.SLEEP, NOW);
+        r.setValue(new BigDecimal(hours));
+        r.setMeasuredAt(Instant.parse(wokeUpAt));
+        return r;
+    }
+
+    @Test
+    void sleepIsAveragedPerNightSoNapsDoNotDragItDown() {
+        when(readings.findInRange(eq(1L), eq(VitalType.SLEEP), any(), any())).thenReturn(List.of(
+                sleep("7.0", "2026-04-14T06:30:00Z"),
+                sleep("1.0", "2026-04-14T15:00:00Z"),
+                sleep("6.0", "2026-04-15T06:30:00Z")));
+
+        GoalMetrics metrics = service.metrics(1L, ZoneOffset.UTC, LocalDate.of(2026, 4, 15));
+
+        // (7 + 1) and 6 hours over two nights, not 14 hours over three entries.
+        assertThat(metrics.averageSleep7d()).isEqualByComparingTo("7.0");
+    }
 }
