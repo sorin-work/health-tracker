@@ -1,6 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
+import { listRanges } from '../api/ranges';
 import { deleteVital, listVitals, vitalTrend, type VitalReading, type VitalType } from '../api/vitals';
 import { TrendChart } from '../components/charts/TrendChart';
 import { DateRangePicker } from '../components/DateRangePicker';
@@ -13,6 +14,7 @@ import { PageHeader } from '../components/PageHeader';
 import { VitalForm } from '../components/VitalForm';
 import { formatDateTime, presetRange, type DateRange } from '../lib/dates';
 import { formatNumber, formatVitalValue, GLUCOSE_CONTEXT_LABELS, VITAL_META, VITAL_TYPES } from '../lib/format';
+import { bandsFor } from '../lib/ranges';
 
 const PAGE_SIZE = 25;
 
@@ -48,12 +50,14 @@ export function VitalsPage() {
     queryFn: () => listVitals({ type, from: range.from, to: range.to, flagged: flaggedOnly, page, size: PAGE_SIZE }),
     placeholderData: keepPreviousData,
   });
+  const ranges = useQuery({ queryKey: ['ranges'], queryFn: listRanges, staleTime: 5 * 60_000 });
   const remove = useMutation({
     mutationFn: deleteVital,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['vitals'] }),
   });
 
   const meta = VITAL_META[type];
+  const [band, secondaryBand] = bandsFor(type, ranges.data);
   const points = trend.data ?? [];
   const total = readings.data?.total ?? 0;
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -93,7 +97,7 @@ export function VitalsPage() {
         </div>
         <ErrorMessage error={trend.error} />
         {points.length > 0 ? (
-          <TrendChart type={type} points={points} />
+          <TrendChart type={type} points={points} band={band} secondaryBand={secondaryBand} />
         ) : (
           !trend.isPending && <EmptyState title={`No ${meta.label.toLowerCase()} readings in this period`} />
         )}
