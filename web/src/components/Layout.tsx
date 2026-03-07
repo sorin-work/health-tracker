@@ -11,6 +11,7 @@ import {
   PillIcon,
   PulseIcon,
   RunIcon,
+  SettingsIcon,
   TargetIcon,
 } from './icons';
 
@@ -27,6 +28,7 @@ const NAV: NavItem[] = [
   { to: '/symptoms', label: 'Symptoms', icon: NoteIcon },
   { to: '/activity', label: 'Activity', icon: RunIcon },
   { to: '/goals', label: 'Goals', icon: TargetIcon },
+  { to: '/settings', label: 'Settings', icon: SettingsIcon },
 ];
 
 export function Layout() {

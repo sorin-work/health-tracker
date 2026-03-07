@@ -915,6 +915,51 @@ input[type='range'] {
   flex-wrap: wrap;
 }
 
+/* Settings */
+
+.ranges {
+  display: flex;
+  flex-direction: column;
+}
+
+.range-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 0.5rem 1rem;
+  align-items: center;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.range-row:last-child {
+  border-bottom: 0;
+}
+
+.range-row__label {
+  display: flex;
+  flex-direction: column;
+}
+
+.range-row__inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.range-row__inputs input {
+  width: 4.75rem;
+}
+
+.range-row__actions {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.range-row .alert {
+  grid-column: 1 / -1;
+}
+
 /* Modal */
 
 .modal-backdrop {

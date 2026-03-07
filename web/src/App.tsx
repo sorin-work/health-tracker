@@ -7,6 +7,7 @@ import { GoalsPage } from './pages/GoalsPage';
 import { LoginPage } from './pages/LoginPage';
 import { MedicationsPage } from './pages/MedicationsPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { SettingsPage } from './pages/SettingsPage';
 import { SymptomsPage } from './pages/SymptomsPage';
 import { VitalsPage } from './pages/VitalsPage';
 
@@ -25,6 +26,7 @@ export function App() {
           <Route path="/symptoms" element={<SymptomsPage />} />
           <Route path="/activity" element={<ActivityPage />} />
           <Route path="/goals" element={<GoalsPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
