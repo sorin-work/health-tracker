@@ -35,11 +35,18 @@ class RangeFlaggerTest {
         "135, 76, HIGH",
         "118, 85, HIGH",
         "85, 55, LOW",
-        "182, 95, CRITICAL_HIGH"
+        "182, 95, CRITICAL_HIGH",
+        "150, 121, CRITICAL_HIGH"
     })
     void bloodPressureUsesTheWorseOfBothNumbers(String sys, String dia, Flag expected) {
         assertThat(flagger.flag(VitalType.BLOOD_PRESSURE, new BigDecimal(sys), new BigDecimal(dia), null))
                 .isEqualTo(expected);
+    }
+
+    @Test
+    void highSystolicDoesNotHideCriticalDiastolic() {
+        assertThat(flagger.flag(VitalType.BLOOD_PRESSURE, new BigDecimal("150"), new BigDecimal("125"), null))
+                .isEqualTo(Flag.CRITICAL_HIGH);
     }
 
     @Test

@@ -27,10 +27,8 @@ public final class RangeFlagger {
             case HEART_RATE -> range(RangeMetric.HEART_RATE).classify(value);
             case SLEEP -> range(RangeMetric.SLEEP).classify(value);
             case BLOOD_GLUCOSE -> range(glucoseMetric(context)).classify(value);
-            case BLOOD_PRESSURE -> {
-                Flag systolic = range(RangeMetric.SYSTOLIC).classify(value);
-                yield systolic != Flag.NORMAL ? systolic : range(RangeMetric.DIASTOLIC).classify(secondary);
-            }
+            case BLOOD_PRESSURE -> Flag.worst(
+                    range(RangeMetric.SYSTOLIC).classify(value), range(RangeMetric.DIASTOLIC).classify(secondary));
         };
     }
 
