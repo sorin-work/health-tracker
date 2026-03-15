@@ -4,6 +4,7 @@ import { useAuth, useUser } from '../auth/AuthContext';
 import { Disclaimer } from './Disclaimer';
 import {
   CloseIcon,
+  DownloadIcon,
   HomeIcon,
   LogoutIcon,
   MenuIcon,
@@ -28,6 +29,7 @@ const NAV: NavItem[] = [
   { to: '/symptoms', label: 'Symptoms', icon: NoteIcon },
   { to: '/activity', label: 'Activity', icon: RunIcon },
   { to: '/goals', label: 'Goals', icon: TargetIcon },
+  { to: '/export', label: 'Export', icon: DownloadIcon },
   { to: '/settings', label: 'Settings', icon: SettingsIcon },
 ];
 
