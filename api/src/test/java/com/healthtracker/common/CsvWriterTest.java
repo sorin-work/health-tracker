@@ -18,4 +18,10 @@ class CsvWriterTest {
         assertThat(CsvWriter.escape("Headache, mild")).isEqualTo("\"Headache, mild\"");
         assertThat(CsvWriter.escape("the \"bad\" one")).isEqualTo("\"the \"\"bad\"\" one\"");
     }
+
+    @Test
+    void quotesLineBreaks() {
+        assertThat(CsvWriter.escape("line one\nline two")).isEqualTo("\"line one\nline two\"");
+        assertThat(CsvWriter.escape("windows\r\nbreak")).isEqualTo("\"windows\r\nbreak\"");
+    }
 }
