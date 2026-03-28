@@ -42,3 +42,4 @@ app:
     ttl: ${JWT_TTL:7d}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  seed-demo: ${SEED_DEMO:false}
