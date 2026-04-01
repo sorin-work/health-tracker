@@ -1,43 +1,78 @@
 # health-tracker
 
-A personal health log: vitals (weight, blood pressure, heart rate, glucose, sleep),
-medications with a daily dose log and adherence, and out-of-range flags for readings.
+A personal health log for people who need to keep an eye on a few numbers: blood
+pressure, weight, glucose, sleep, the medications they take and how they feel.
 
-> Not medical advice. This is a record-keeping tool; talk to your doctor about your
-> own targets.
+> **Not medical advice.** Health Tracker is a record-keeping tool. The default ranges
+> are general guidance for adults and may not be right for you. Talk to your doctor
+> about your own targets.
+
+## Features
+
+- **Vitals**: weight, blood pressure, heart rate, blood glucose and sleep, with trend
+  charts and readings flagged when they are outside a reference range
+- **Medications**: daily schedules, a dose log (taken / skipped / missed) and adherence
+- **Symptoms**: severity 1-10 with notes, plotted over time
+- **Activity**: workouts and walks with weekly active minutes
+- **Goals**: target weight, daily steps, active minutes, workouts and sleep
+- **Settings**: your own reference ranges and time zone
+- **CSV export** of everything, e.g. to share with a doctor
 
 ## Stack
 
-- **API**: Java 21, Spring Boot 3, Spring Security with JWT, Spring Data JPA, Flyway, PostgreSQL
-- **Web**: React, TypeScript, Vite, React Router, TanStack Query, Recharts
+| Part     | Tech                                                                       |
+| -------- | -------------------------------------------------------------------------- |
+| API      | Java 21, Spring Boot 3.5, Spring Security (JWT), Spring Data JPA, Flyway   |
+| Database | PostgreSQL 17                                                              |
+| Web      | React 19, TypeScript, Vite, React Router, TanStack Query, Recharts         |
+| Tests    | JUnit 5, Mockito, `@WebMvcTest`, H2; Vitest and Testing Library            |
+
+## Running with Docker
+
+```bash
+docker compose up --build
+```
+
+Then open http://localhost:5176 and sign in with the demo account:
+
+- **Email:** `demo@example.com`
+- **Password:** `demo-password`
+
+The demo user is created on first start with about a year of readings, medications,
+doses, symptoms and workouts. Set `SEED_DEMO=false` to start with an empty database.
+
+| Service | Host port | Notes                            |
+| ------- | --------- | -------------------------------- |
+| web     | 5176      | nginx; proxies `/api` to the API |
+| api     | 4300      | Spring Boot                      |
+| db      | 5435      | Postgres 17                      |
+
+Ports can be changed with `WEB_PORT`, `API_PORT` and `DB_PORT`; see `.env.example`.
+`docker compose down -v` removes the database volume.
 
 ## Local development
 
 You need Java 21, Node 22 and Docker (for Postgres).
 
 ```bash
-# Postgres on localhost:5435 (user/password/db: health)
 docker compose up -d db
 
-# API on http://localhost:8080, applies migrations on start
 cd api
-./mvnw spring-boot:run
+./mvnw spring-boot:run        # http://localhost:8080
 
-# Web app on http://localhost:5173, proxies /api to the API
 cd web
 npm install
-npm run dev
+npm run dev                   # http://localhost:5173
 ```
-
-Open http://localhost:5173 and create an account.
 
 ## Tests
 
 ```bash
 cd api && ./mvnw test
+cd web && npm test
 ```
 
-The API tests use mocks and don't need a database.
+Neither suite needs a running database.
 
 ## Layout
 
