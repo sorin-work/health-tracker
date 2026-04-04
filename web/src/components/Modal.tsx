@@ -18,7 +18,12 @@ export function Modal({
       if (e.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', onKey);
-    dialogRef.current?.querySelector<HTMLElement>('input, select, textarea, button')?.focus();
+    // Start in the first field of the form rather than on the close button in the header.
+    const dialog = dialogRef.current;
+    (
+      dialog?.querySelector<HTMLElement>('input:not([disabled]), select:not([disabled]), textarea') ??
+      dialog?.querySelector<HTMLElement>('button')
+    )?.focus();
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
 
