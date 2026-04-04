@@ -12,10 +12,16 @@ export function Modal({
 }) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
+  // Parents pass a new arrow function on every render. Keep the latest one in a ref so the effect
+  // below runs once; re-running it moved focus back to the first field while the user typed.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') onCloseRef.current();
     };
     document.addEventListener('keydown', onKey);
     // Start in the first field of the form rather than on the close button in the header.
@@ -25,7 +31,7 @@ export function Modal({
       dialog?.querySelector<HTMLElement>('button')
     )?.focus();
     return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, []);
 
   return (
     <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
