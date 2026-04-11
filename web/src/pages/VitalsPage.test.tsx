@@ -47,4 +47,15 @@ describe('VitalsPage', () => {
     await waitFor(() => expect(screen.queryByText(/Page 2/)).not.toBeInTheDocument());
     expect(vi.mocked(vitalsApi.listVitals).mock.lastCall?.[0]).toMatchObject({ page: 0 });
   });
+
+  it('includes the diastolic average in the blood pressure summary', async () => {
+    vi.mocked(vitalsApi.vitalTrend).mockResolvedValue([
+      { date: '2026-03-01', average: 130, min: 125, max: 135, averageSecondary: 85, count: 2, flagged: 0 },
+      { date: '2026-03-02', average: 120, min: 120, max: 120, averageSecondary: 80, count: 2, flagged: 0 },
+    ]);
+    renderWithProviders(<VitalsPage />, { route: '/vitals?type=BLOOD_PRESSURE' });
+
+    expect(await screen.findByText('125/83 mmHg')).toBeInTheDocument();
+    expect(screen.getByText('Lowest systolic')).toBeInTheDocument();
+  });
 });

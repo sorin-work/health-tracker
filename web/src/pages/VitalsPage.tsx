@@ -2,7 +2,14 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { listRanges } from '../api/ranges';
-import { deleteVital, listVitals, vitalTrend, type VitalReading, type VitalType } from '../api/vitals';
+import {
+  deleteVital,
+  listVitals,
+  vitalTrend,
+  type TrendPoint,
+  type VitalReading,
+  type VitalType,
+} from '../api/vitals';
 import { TrendChart } from '../components/charts/TrendChart';
 import { DateRangePicker } from '../components/DateRangePicker';
 import { EmptyState } from '../components/EmptyState';
@@ -105,7 +112,7 @@ export function VitalsPage() {
         ) : (
           !trend.isPending && <EmptyState title={`No ${meta.label.toLowerCase()} readings in this period`} />
         )}
-        {points.length > 0 && <TrendSummary points={points} decimals={meta.decimals} unit={meta.unit} />}
+        {points.length > 0 && <TrendSummary type={type} points={points} />}
       </section>
 
       <section className="card">
@@ -192,18 +199,18 @@ export function VitalsPage() {
   );
 }
 
-function TrendSummary({
-  points,
-  decimals,
-  unit,
-}: {
-  points: { average: number; min: number; max: number; flagged: number; count: number }[];
-  decimals: number;
-  unit: string;
-}) {
+function TrendSummary({ type, points }: { type: VitalType; points: TrendPoint[] }) {
+  const { decimals, unit } = VITAL_META[type];
   const count = points.reduce((n, p) => n + p.count, 0);
   const flagged = points.reduce((n, p) => n + p.flagged, 0);
   const avg = points.reduce((s, p) => s + p.average * p.count, 0) / count;
+  // Blood pressure days always have a diastolic average; weight them the same way as systolic.
+  const withSecondary = points.filter((p) => p.averageSecondary !== undefined && p.averageSecondary !== null);
+  const secondaryCount = withSecondary.reduce((n, p) => n + p.count, 0);
+  const avgSecondary =
+    secondaryCount > 0
+      ? withSecondary.reduce((s, p) => s + (p.averageSecondary ?? 0) * p.count, 0) / secondaryCount
+      : undefined;
   const min = Math.min(...points.map((p) => p.min));
   const max = Math.max(...points.map((p) => p.max));
   return (
@@ -211,15 +218,15 @@ function TrendSummary({
       <div>
         <dt>Average</dt>
         <dd>
-          {formatNumber(avg, decimals)} {unit}
+          {formatVitalValue(type, avg, avgSecondary)} {unit}
         </dd>
       </div>
       <div>
-        <dt>Lowest</dt>
+        <dt>{type === 'BLOOD_PRESSURE' ? 'Lowest systolic' : 'Lowest'}</dt>
         <dd>{formatNumber(min, decimals)}</dd>
       </div>
       <div>
-        <dt>Highest</dt>
+        <dt>{type === 'BLOOD_PRESSURE' ? 'Highest systolic' : 'Highest'}</dt>
         <dd>{formatNumber(max, decimals)}</dd>
       </div>
       <div>
