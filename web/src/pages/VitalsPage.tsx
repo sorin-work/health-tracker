@@ -53,7 +53,11 @@ export function VitalsPage() {
   const ranges = useQuery({ queryKey: ['ranges'], queryFn: listRanges, staleTime: 5 * 60_000 });
   const remove = useMutation({
     mutationFn: deleteVital,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['vitals'] }),
+    onSuccess: () => {
+      // Deleting the only reading on the last page would leave an empty page behind.
+      if (page > 0 && readings.data?.items.length === 1) setPage(page - 1);
+      queryClient.invalidateQueries({ queryKey: ['vitals'] });
+    },
   });
 
   const meta = VITAL_META[type];
