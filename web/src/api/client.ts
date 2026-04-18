@@ -31,6 +31,14 @@ export function setToken(token: string | null): void {
   }
 }
 
+type UnauthorizedListener = () => void;
+let onUnauthorized: UnauthorizedListener | null = null;
+
+/** Called when a signed-in request comes back 401, e.g. because the token expired. */
+export function setUnauthorizedHandler(listener: UnauthorizedListener | null): void {
+  onUnauthorized = listener;
+}
+
 type Method = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
 async function send(method: Method, path: string, body?: unknown): Promise<Response> {
@@ -47,6 +55,10 @@ async function send(method: Method, path: string, body?: unknown): Promise<Respo
 
   if (!res.ok) {
     const data = await res.json().catch(() => null);
+    if (res.status === 401 && token) {
+      setToken(null);
+      onUnauthorized?.();
+    }
     throw new ApiError(
       res.status,
       data?.message ?? `Request failed (${res.status})`,

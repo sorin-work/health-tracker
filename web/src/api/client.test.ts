@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { api, ApiError, setToken, toQuery } from './client';
+import { api, ApiError, getToken, setToken, setUnauthorizedHandler, toQuery } from './client';
 
 function jsonResponse(status: number, body: unknown, headers: Record<string, string> = {}) {
   return new Response(JSON.stringify(body), {
@@ -25,6 +25,7 @@ describe('api client', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     fetchMock.mockReset();
+    setUnauthorizedHandler(null);
   });
 
   it('sends the bearer token', async () => {
@@ -49,6 +50,27 @@ describe('api client', () => {
     expect(error.status).toBe(400);
     expect(error.code).toBe('validation_failed');
     expect(error.fields).toEqual({ value: 'must not be null' });
+  });
+
+  it('signs out when a signed-in request gets a 401', async () => {
+    setToken('expired');
+    const onUnauthorized = vi.fn();
+    setUnauthorizedHandler(onUnauthorized);
+    fetchMock.mockResolvedValue(jsonResponse(401, { error: 'unauthorized', message: 'Sign in to continue' }));
+
+    await expect(api.get('/vitals')).rejects.toThrow('Sign in to continue');
+
+    expect(getToken()).toBeNull();
+    expect(onUnauthorized).toHaveBeenCalledOnce();
+  });
+
+  it('does not treat a failed login as an expired session', async () => {
+    const onUnauthorized = vi.fn();
+    setUnauthorizedHandler(onUnauthorized);
+    fetchMock.mockResolvedValue(jsonResponse(401, { error: 'invalid_credentials', message: 'Email or password is incorrect' }));
+
+    await expect(api.post('/auth/login', {})).rejects.toThrow('Email or password is incorrect');
+    expect(onUnauthorized).not.toHaveBeenCalled();
   });
 
   it('returns undefined for 204 responses', async () => {

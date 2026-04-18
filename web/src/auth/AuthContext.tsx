@@ -1,8 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import * as authApi from '../api/auth';
 import type { User } from '../api/auth';
-import { getToken, setToken } from '../api/client';
+import { getToken, setToken, setUnauthorizedHandler } from '../api/client';
 
 export const ME_QUERY_KEY = ['me'] as const;
 
@@ -33,6 +33,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setHasToken(false);
     queryClient.clear();
   }, [queryClient]);
+
+  // An expired token anywhere in the app sends the user back to the login page.
+  useEffect(() => {
+    setUnauthorizedHandler(signOut);
+    return () => setUnauthorizedHandler(null);
+  }, [signOut]);
 
   const signedIn = useCallback(
     (response: authApi.AuthResponse) => {
