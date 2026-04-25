@@ -100,6 +100,12 @@ export const GOAL_META: Record<GoalType, { label: string; unit: string; describe
   SLEEP_HOURS: { label: 'Sleep', unit: 'h', describe: (t) => `Sleep ${formatNumber(t, 1)} h a night` },
 };
 
+/** Progress bar colour for an adherence percentage: green from 90% up. */
+export function adherenceTone(percent: number | undefined): 'success' | 'warning' | 'default' {
+  if (percent === undefined) return 'default';
+  return percent >= 90 ? 'success' : 'warning';
+}
+
 export function severityLabel(severity: number): string {
   if (severity <= 3) return 'Mild';
   if (severity <= 6) return 'Moderate';

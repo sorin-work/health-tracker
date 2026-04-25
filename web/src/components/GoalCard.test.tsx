@@ -1,7 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { Goal } from '../api/goals';
-import { GoalCard, goalStatus } from './GoalCard';
+import { goalStatus } from '../lib/goals';
+import { GoalCard } from './GoalCard';
 
 const goal: Goal = {
   id: 1,

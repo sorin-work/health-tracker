@@ -12,8 +12,7 @@ import { GoalCard } from '../components/GoalCard';
 import { AlertIcon } from '../components/icons';
 import { ProgressBar } from '../components/ProgressBar';
 import { formatDateTime, presetRange, today } from '../lib/dates';
-import { formatReading, formatVitalValue, VITAL_META } from '../lib/format';
-import { adherenceTone } from './MedicationsPage';
+import { adherenceTone, formatReading, formatVitalValue, VITAL_META } from '../lib/format';
 
 function greeting(date = new Date()): string {
   const h = date.getHours();

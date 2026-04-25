@@ -20,6 +20,7 @@ import { Modal } from '../components/Modal';
 import { PageHeader } from '../components/PageHeader';
 import { ProgressBar } from '../components/ProgressBar';
 import { addDays, formatDate, presetRange, shortTime, today, type DateRange } from '../lib/dates';
+import { adherenceTone } from '../lib/format';
 
 export function MedicationsPage() {
   const queryClient = useQueryClient();
@@ -190,11 +191,6 @@ export function MedicationsPage() {
       )}
     </>
   );
-}
-
-export function adherenceTone(percent: number | undefined): 'success' | 'warning' | 'default' {
-  if (percent === undefined) return 'default';
-  return percent >= 90 ? 'success' : 'warning';
 }
 
 function AdherenceSummary({ stats }: { stats: AdherenceStats }) {

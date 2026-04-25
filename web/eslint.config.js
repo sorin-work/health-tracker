@@ -21,4 +21,9 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
     },
   },
+  {
+    // The auth context exports its hooks next to the provider, which is the usual pattern.
+    files: ['src/auth/AuthContext.tsx'],
+    rules: { 'react-refresh/only-export-components': 'off' },
+  },
 );
