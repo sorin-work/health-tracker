@@ -1040,6 +1040,30 @@ input[type='range'] {
   }
 }
 
+/* Accessibility */
+
+.skip-link {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 100;
+  padding: 0.5rem 0.9rem;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  transform: translateY(-200%);
+}
+
+.skip-link:focus {
+  transform: none;
+  text-decoration: none;
+}
+
+.content:focus {
+  outline: none;
+}
+
 /* Small screens: the sidebar turns into a drop-down menu under a top bar. */
 
 @media (max-width: 820px) {

@@ -43,6 +43,9 @@ export function Layout() {
 
   return (
     <div className="shell">
+      <a className="skip-link" href="#main">
+        Skip to content
+      </a>
       <header className="topbar">
         <Brand />
         <button
@@ -84,7 +87,7 @@ export function Layout() {
         </div>
       </aside>
 
-      <main className="content">
+      <main className="content" id="main" tabIndex={-1}>
         <Outlet />
         <Disclaimer />
       </main>
