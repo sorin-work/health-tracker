@@ -9,7 +9,7 @@ export function AdherenceChart({ daily }: { daily: Adherence['daily'] }) {
     .map((d) => ({ date: d.date, percent: d.stats.percent ?? 0, taken: d.stats.taken, due: d.stats.taken + d.stats.skipped + d.stats.missed }));
 
   return (
-    <div className="chart" aria-label="Daily adherence">
+    <div className="chart" role="img" aria-label="Daily adherence">
       <ResponsiveContainer width="100%" height={220}>
         <BarChart data={data} margin={{ top: 8, right: 16, bottom: 0, left: -16 }}>
           <CartesianGrid stroke="var(--border)" vertical={false} />

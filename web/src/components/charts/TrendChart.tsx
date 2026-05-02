@@ -44,7 +44,15 @@ export function TrendChart({
   const domain = [Math.floor(min - pad), Math.ceil(max + pad)];
 
   return (
-    <div className="chart" aria-label={`${meta.label} trend`}>
+    <div
+      className="chart"
+      role="img"
+      aria-label={
+        points.length > 0
+          ? `${meta.label} trend from ${formatShortDate(points[0].date)} to ${formatShortDate(points[points.length - 1].date)}`
+          : `${meta.label} trend`
+      }
+    >
       <ResponsiveContainer width="100%" height={280}>
         <LineChart data={points} margin={{ top: 8, right: 16, bottom: 0, left: -8 }}>
           <CartesianGrid stroke="var(--border)" vertical={false} />

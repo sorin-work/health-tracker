@@ -15,7 +15,7 @@ export function SymptomChart({ symptoms }: { symptoms: Symptom[] }) {
   }));
 
   return (
-    <div className="chart" aria-label="Symptom severity over time">
+    <div className="chart" role="img" aria-label="Symptom severity over time">
       <ResponsiveContainer width="100%" height={240}>
         <ScatterChart margin={{ top: 8, right: 16, bottom: 0, left: -16 }}>
           <CartesianGrid stroke="var(--border)" vertical={false} />

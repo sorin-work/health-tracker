@@ -6,7 +6,7 @@ import { formatMinutes } from '../../lib/format';
 /** Active minutes per week, with an optional target line (e.g. 150 minutes). */
 export function WeeklyActivityChart({ weeks, target }: { weeks: WeeklyActivity[]; target?: number }) {
   return (
-    <div className="chart" aria-label="Active minutes per week">
+    <div className="chart" role="img" aria-label="Active minutes per week">
       <ResponsiveContainer width="100%" height={240}>
         <BarChart data={weeks} margin={{ top: 8, right: 16, bottom: 0, left: -12 }}>
           <CartesianGrid stroke="var(--border)" vertical={false} />
