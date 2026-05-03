@@ -1,5 +1,10 @@
 import { matchPreset, presetRange, RANGE_PRESETS, today, type DateRange } from '../lib/dates';
 
+// min/max on a date input only limit the picker; a typed date can still cross the other end.
+// Move the other end along instead of sending a range the API rejects.
+const withFrom = (range: DateRange, from: string): DateRange => ({ from, to: from > range.to ? from : range.to });
+const withTo = (range: DateRange, to: string): DateRange => ({ from: to < range.from ? to : range.from, to });
+
 /** Preset buttons (7 days … 1 year) plus custom from/to inputs. */
 export function DateRangePicker({ value, onChange }: { value: DateRange; onChange: (range: DateRange) => void }) {
   const active = matchPreset(value);
@@ -25,7 +30,7 @@ export function DateRangePicker({ value, onChange }: { value: DateRange; onChang
           aria-label="From"
           value={value.from}
           max={value.to}
-          onChange={(e) => e.target.value && onChange({ ...value, from: e.target.value })}
+          onChange={(e) => e.target.value && onChange(withFrom(value, e.target.value))}
         />
         <span aria-hidden>–</span>
         <input
@@ -34,7 +39,7 @@ export function DateRangePicker({ value, onChange }: { value: DateRange; onChang
           value={value.to}
           min={value.from}
           max={max}
-          onChange={(e) => e.target.value && onChange({ ...value, to: e.target.value })}
+          onChange={(e) => e.target.value && onChange(withTo(value, e.target.value))}
         />
       </div>
     </div>

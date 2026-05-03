@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { presetRange } from '../lib/dates';
@@ -25,5 +25,16 @@ describe('DateRangePicker', () => {
     expect(screen.getByLabelText('From')).toHaveValue('2026-01-01');
     expect(screen.getByLabelText('To')).toHaveValue('2026-01-31');
     expect(screen.getAllByRole('button').every((b) => b.getAttribute('aria-pressed') === 'false')).toBe(true);
+  });
+
+  it('moves the other end when a typed date crosses it', () => {
+    const onChange = vi.fn();
+    render(<DateRangePicker value={{ from: '2026-01-01', to: '2026-01-31' }} onChange={onChange} />);
+
+    fireEvent.change(screen.getByLabelText('From'), { target: { value: '2026-02-10' } });
+    expect(onChange).toHaveBeenLastCalledWith({ from: '2026-02-10', to: '2026-02-10' });
+
+    fireEvent.change(screen.getByLabelText('To'), { target: { value: '2025-12-24' } });
+    expect(onChange).toHaveBeenLastCalledWith({ from: '2025-12-24', to: '2025-12-24' });
   });
 });
