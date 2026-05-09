@@ -35,12 +35,13 @@ class DoseScheduleTest {
     }
 
     @Test
-    void respectsStartAndEndDates() {
+    void respectsStartAndEndDatesInclusively() {
         Medication m = scheduled(1, "Amoxicillin", JAN_10, JAN_10.plusDays(6), "08:00");
 
         assertThat(DoseSchedule.slotsOn(m, JAN_10.minusDays(1), BERLIN)).isEmpty();
         assertThat(DoseSchedule.slotsOn(m, JAN_10, BERLIN)).hasSize(1);
-        assertThat(DoseSchedule.slotsOn(m, JAN_10.plusDays(10), BERLIN)).isEmpty();
+        assertThat(DoseSchedule.slotsOn(m, JAN_10.plusDays(6), BERLIN)).hasSize(1);
+        assertThat(DoseSchedule.slotsOn(m, JAN_10.plusDays(7), BERLIN)).isEmpty();
     }
 
     @Test

@@ -72,7 +72,7 @@ public class Medication {
         if (asNeeded || day.isBefore(startDate)) {
             return false;
         }
-        return endDate == null || day.isBefore(endDate);
+        return endDate == null || !day.isAfter(endDate);
     }
 
     public Long getId() {
