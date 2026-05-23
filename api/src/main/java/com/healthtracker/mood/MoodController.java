@@ -1,11 +1,13 @@
 package com.healthtracker.mood;
 
 import com.healthtracker.common.PageResponse;
+import com.healthtracker.mood.dto.MoodDay;
 import com.healthtracker.mood.dto.MoodRequest;
 import com.healthtracker.mood.dto.MoodResponse;
 import com.healthtracker.security.AuthUser;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
+import java.util.List;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -38,6 +40,14 @@ public class MoodController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
         return moodService.list(user.id(), from, to, page, size);
+    }
+
+    @GetMapping("/daily")
+    public List<MoodDay> daily(
+            @AuthenticationPrincipal AuthUser user,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return moodService.daily(user.id(), from, to);
     }
 
     @PostMapping

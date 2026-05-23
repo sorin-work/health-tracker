@@ -3,11 +3,13 @@ package com.healthtracker.mood;
 import com.healthtracker.common.ApiException;
 import com.healthtracker.common.DateRange;
 import com.healthtracker.common.PageResponse;
+import com.healthtracker.mood.dto.MoodDay;
 import com.healthtracker.mood.dto.MoodRequest;
 import com.healthtracker.mood.dto.MoodResponse;
 import com.healthtracker.user.UserService;
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +38,14 @@ public class MoodService {
         return inRange(userId, DateRange.of(from, to, userService.zoneOf(userId))).stream()
                 .map(MoodResponse::from)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<MoodDay> daily(Long userId, LocalDate from, LocalDate to) {
+        ZoneId zone = userService.zoneOf(userId);
+        LocalDate end = to != null ? to : LocalDate.now(clock.withZone(zone));
+        LocalDate start = from != null ? from : end.minusDays(29);
+        return MoodStats.daily(inRange(userId, DateRange.of(start, end, zone)), zone);
     }
 
     @Transactional
