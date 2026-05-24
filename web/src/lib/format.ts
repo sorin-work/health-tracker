@@ -106,6 +106,27 @@ export function adherenceTone(percent: number | undefined): 'success' | 'warning
   return percent >= 90 ? 'success' : 'warning';
 }
 
+export const MOOD_LABELS: Record<number, string> = {
+  1: 'Very low',
+  2: 'Low',
+  3: 'Okay',
+  4: 'Good',
+  5: 'Very good',
+};
+
+export const ENERGY_LABELS: Record<number, string> = {
+  1: 'Exhausted',
+  2: 'Tired',
+  3: 'Normal',
+  4: 'Energetic',
+  5: 'Full of energy',
+};
+
+/** Label for a (possibly averaged) mood score, rounded to the nearest step. */
+export function moodLabel(score: number): string {
+  return MOOD_LABELS[Math.min(5, Math.max(1, Math.round(score)))];
+}
+
 export function severityLabel(severity: number): string {
   if (severity <= 3) return 'Mild';
   if (severity <= 6) return 'Moderate';

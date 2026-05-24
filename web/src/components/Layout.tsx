@@ -13,6 +13,7 @@ import {
   PulseIcon,
   RunIcon,
   SettingsIcon,
+  SmileIcon,
   TargetIcon,
 } from './icons';
 
@@ -27,6 +28,7 @@ const NAV: NavItem[] = [
   { to: '/vitals', label: 'Vitals', icon: PulseIcon },
   { to: '/medications', label: 'Medications', icon: PillIcon },
   { to: '/symptoms', label: 'Symptoms', icon: NoteIcon },
+  { to: '/mood', label: 'Mood', icon: SmileIcon },
   { to: '/activity', label: 'Activity', icon: RunIcon },
   { to: '/goals', label: 'Goals', icon: TargetIcon },
   { to: '/export', label: 'Export', icon: DownloadIcon },
