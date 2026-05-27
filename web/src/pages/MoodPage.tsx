@@ -1,6 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { deleteMood, listMood, type MoodEntry } from '../api/mood';
+import { deleteMood, listMood, moodDaily, type MoodEntry } from '../api/mood';
+import { MoodChart } from '../components/charts/MoodChart';
 import { DateRangePicker } from '../components/DateRangePicker';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorMessage } from '../components/ErrorMessage';
@@ -20,6 +21,11 @@ export function MoodPage() {
     queryFn: () => listMood({ from: range.from, to: range.to, size: 200 }),
     placeholderData: keepPreviousData,
   });
+  const daily = useQuery({
+    queryKey: ['mood', 'daily', range.from, range.to],
+    queryFn: () => moodDaily(range.from, range.to),
+    placeholderData: keepPreviousData,
+  });
   const remove = useMutation({
     mutationFn: deleteMood,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['mood'] }),
@@ -34,6 +40,19 @@ export function MoodPage() {
         description="A quick daily check-in. Over a few weeks it shows how sleep, medication changes and activity affect how you feel."
       />
 
+      <section className="card">
+        <div className="card__header card__header--wrap">
+          <h2>Over time</h2>
+          <DateRangePicker value={range} onChange={setRange} />
+        </div>
+        <ErrorMessage error={daily.error} />
+        {daily.data && daily.data.length > 0 ? (
+          <MoodChart days={daily.data} />
+        ) : (
+          !daily.isPending && <EmptyState title="No check-ins in this period" />
+        )}
+      </section>
+
       <div className="grid grid--2">
         <section className="card">
           <h2>Check in</h2>
@@ -41,10 +60,7 @@ export function MoodPage() {
         </section>
 
         <section className="card">
-          <div className="card__header card__header--wrap">
-            <h2>Recent check-ins</h2>
-            <DateRangePicker value={range} onChange={setRange} />
-          </div>
+          <h2>Check-ins</h2>
           <ErrorMessage error={entries.error ?? remove.error} />
           {items.length === 0 && !entries.isPending && <EmptyState title="No check-ins in this period" />}
           <ul className="mood-list">
