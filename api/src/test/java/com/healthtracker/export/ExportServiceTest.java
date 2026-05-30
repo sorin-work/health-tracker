@@ -9,6 +9,8 @@ import com.healthtracker.medication.DoseStatus;
 import com.healthtracker.medication.MedicationService;
 import com.healthtracker.medication.dto.DoseResponse;
 import com.healthtracker.medication.dto.MedicationResponse;
+import com.healthtracker.mood.MoodService;
+import com.healthtracker.mood.dto.MoodResponse;
 import com.healthtracker.range.Flag;
 import com.healthtracker.symptom.SymptomService;
 import com.healthtracker.symptom.dto.SymptomResponse;
@@ -41,6 +43,7 @@ class ExportServiceTest {
     @Mock DoseService doseService;
     @Mock SymptomService symptomService;
     @Mock ActivityService activityService;
+    @Mock MoodService moodService;
     @Mock UserService userService;
 
     ExportService service;
@@ -48,7 +51,7 @@ class ExportServiceTest {
     @BeforeEach
     void setUp() {
         service = new ExportService(vitalService, medicationService, doseService, symptomService, activityService,
-                userService, Clock.fixed(Instant.parse("2026-03-01T12:00:00Z"), BERLIN));
+                moodService, userService, Clock.fixed(Instant.parse("2026-03-01T12:00:00Z"), BERLIN));
         when(userService.zoneOf(1L)).thenReturn(BERLIN);
     }
 
@@ -105,5 +108,20 @@ class ExportServiceTest {
 
         assertThat(export.filename()).isEqualTo("health-tracker-symptoms-2025-12-02_2026-03-01.csv");
         assertThat(export.content()).contains("2026-02-01 11:00,Headache,4,60,");
+    }
+
+    @Test
+    void moodCheckInsAreOldestFirst() {
+        when(moodService.entries(1L, FROM, TO)).thenReturn(List.of(
+                new MoodResponse(2L, 2, null, Instant.parse("2026-02-03T20:00:00Z"), "Rough day"),
+                new MoodResponse(1L, 4, 3, Instant.parse("2026-02-02T07:00:00Z"), null)));
+
+        ExportService.Export export = service.export(1L, ExportDataset.MOOD, FROM, TO);
+
+        assertThat(export.filename()).isEqualTo("health-tracker-mood-2026-02-01_2026-02-28.csv");
+        assertThat(export.content().split("\r\n")).containsExactly(
+                "recorded_at,mood,energy,note",
+                "2026-02-02 08:00,4,3,",
+                "2026-02-03 21:00,2,,Rough day");
     }
 }

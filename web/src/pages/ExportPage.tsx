@@ -22,6 +22,7 @@ const DATASETS: { key: ExportDataset; title: string; description: string; ranged
   { key: 'medications', title: 'Medication list', description: 'Names, doses, schedules and dates.', ranged: false },
   { key: 'symptoms', title: 'Symptoms', description: 'Symptom entries with severity and duration.', ranged: true },
   { key: 'activities', title: 'Activity', description: 'Workouts with duration, distance and steps.', ranged: true },
+  { key: 'mood', title: 'Mood', description: 'Mood and energy check-ins with notes.', ranged: true },
 ];
 
 export function ExportPage() {

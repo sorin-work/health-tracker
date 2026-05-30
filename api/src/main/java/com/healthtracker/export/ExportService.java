@@ -6,6 +6,7 @@ import com.healthtracker.medication.DoseService;
 import com.healthtracker.medication.MedicationService;
 import com.healthtracker.medication.dto.DoseResponse;
 import com.healthtracker.medication.dto.MedicationResponse;
+import com.healthtracker.mood.MoodService;
 import com.healthtracker.symptom.SymptomService;
 import com.healthtracker.user.UserService;
 import com.healthtracker.vital.VitalService;
@@ -29,6 +30,7 @@ public class ExportService {
     private final DoseService doseService;
     private final SymptomService symptomService;
     private final ActivityService activityService;
+    private final MoodService moodService;
     private final UserService userService;
     private final Clock clock;
 
@@ -38,6 +40,7 @@ public class ExportService {
             DoseService doseService,
             SymptomService symptomService,
             ActivityService activityService,
+            MoodService moodService,
             UserService userService,
             Clock clock) {
         this.vitalService = vitalService;
@@ -45,6 +48,7 @@ public class ExportService {
         this.doseService = doseService;
         this.symptomService = symptomService;
         this.activityService = activityService;
+        this.moodService = moodService;
         this.userService = userService;
         this.clock = clock;
     }
@@ -62,6 +66,7 @@ public class ExportService {
             case DOSES -> doses(userId, start, end, zone);
             case SYMPTOMS -> symptoms(userId, start, end, zone);
             case ACTIVITIES -> activities(userId, start, end, zone);
+            case MOOD -> mood(userId, start, end, zone);
         };
         String filename = dataset == ExportDataset.MEDICATIONS
                 ? "health-tracker-medications.csv"
@@ -130,6 +135,13 @@ public class ExportService {
                 a.steps(),
                 a.caloriesKcal(),
                 a.notes()));
+        return csv.toString();
+    }
+
+    private String mood(Long userId, LocalDate from, LocalDate to, ZoneId zone) {
+        CsvWriter csv = new CsvWriter().row("recorded_at", "mood", "energy", "note");
+        moodService.entries(userId, from, to).reversed().forEach(m -> csv.row(
+                local(m.recordedAt(), zone), m.mood(), m.energy(), m.note()));
         return csv.toString();
     }
 
