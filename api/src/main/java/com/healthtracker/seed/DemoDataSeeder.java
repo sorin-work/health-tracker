@@ -88,10 +88,11 @@ public class DemoDataSeeder implements ApplicationRunner {
         int doses = seedMedications(userId, first, today, now, random);
         int symptoms = seedSymptoms(userId, first, today, now, random);
         int activities = seedActivities(userId, first, today, now, random);
+        int moods = seedMood(userId, first, today, now, random);
         seedGoals(userId, today, now);
 
-        log.info("Seeded demo user {} with {} readings, {} dose logs, {} symptoms and {} activities",
-                DEMO_EMAIL, readings, doses, symptoms, activities);
+        log.info("Seeded demo user {} with {} readings, {} dose logs, {} symptoms, {} activities and {} mood check-ins",
+                DEMO_EMAIL, readings, doses, symptoms, activities, moods);
     }
 
     private int seedVitals(Long userId, LocalDate first, LocalDate today, Instant now, Random random) {
@@ -273,6 +274,31 @@ public class DemoDataSeeder implements ApplicationRunner {
         jdbc.batchUpdate(
                 "insert into activities (user_id, type, started_at, duration_minutes, distance_km, steps, calories_kcal, notes, created_at)"
                         + " values (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                rows);
+        return rows.size();
+    }
+
+    private int seedMood(Long userId, LocalDate first, LocalDate today, Instant now, Random random) {
+        List<Object[]> rows = new ArrayList<>();
+        for (LocalDate day = first; !day.isAfter(today); day = day.plusDays(1)) {
+            if (random.nextDouble() > 0.8) {
+                continue;
+            }
+            double t = (double) (day.toEpochDay() - first.toEpochDay()) / DAYS;
+            boolean weekend = day.getDayOfWeek() == DayOfWeek.SATURDAY || day.getDayOfWeek() == DayOfWeek.SUNDAY;
+            // Slowly better over the year, a little better at weekends, and a dip in the dark weeks.
+            double winter = Math.exp(-Math.pow((t - 0.2) / 0.06, 2)) * 0.7;
+            double score = 3.1 + 0.8 * t + (weekend ? 0.3 : 0) - winter + random.nextGaussian() * 0.7;
+            int mood = (int) Math.max(1, Math.min(5, Math.round(score)));
+            Integer energy = random.nextDouble() < 0.75
+                    ? (int) Math.max(1, Math.min(5, Math.round(score - 0.2 + random.nextGaussian() * 0.6)))
+                    : null;
+            String note = mood <= 2 && random.nextDouble() < 0.5 ? "Slept badly" : null;
+            rows.add(new Object[] {userId, mood, energy, odt(at(day, 20, 60, random)), note, odt(now)});
+        }
+        rows.removeIf(r -> ((OffsetDateTime) r[3]).toInstant().isAfter(now));
+        jdbc.batchUpdate(
+                "insert into mood_entries (user_id, mood, energy, recorded_at, note, created_at) values (?, ?, ?, ?, ?, ?)",
                 rows);
         return rows.size();
     }
