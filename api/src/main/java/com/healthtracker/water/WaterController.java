@@ -4,8 +4,10 @@ import com.healthtracker.security.AuthUser;
 import com.healthtracker.water.dto.WaterDay;
 import com.healthtracker.water.dto.WaterEntry;
 import com.healthtracker.water.dto.WaterRequest;
+import com.healthtracker.water.dto.WaterTotal;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
+import java.util.List;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -34,6 +36,14 @@ public class WaterController {
             @AuthenticationPrincipal AuthUser user,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         return waterService.day(user.id(), date);
+    }
+
+    @GetMapping("/daily")
+    public List<WaterTotal> daily(
+            @AuthenticationPrincipal AuthUser user,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return waterService.daily(user.id(), from, to);
     }
 
     @PostMapping
