@@ -17,6 +17,8 @@ import com.healthtracker.user.UserService;
 import com.healthtracker.vital.VitalReading;
 import com.healthtracker.vital.VitalReadingRepository;
 import com.healthtracker.vital.VitalType;
+import com.healthtracker.water.WaterIntake;
+import com.healthtracker.water.WaterRepository;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
@@ -45,13 +47,16 @@ class GoalServiceTest {
     ActivityRepository activities;
 
     @Mock
+    WaterRepository water;
+
+    @Mock
     UserService userService;
 
     GoalService service;
 
     @BeforeEach
     void setUp() {
-        service = new GoalService(goals, readings, activities, userService, Clock.fixed(NOW, ZoneOffset.UTC));
+        service = new GoalService(goals, readings, activities, water, userService, Clock.fixed(NOW, ZoneOffset.UTC));
         lenient().when(userService.zoneOf(1L)).thenReturn(ZoneOffset.UTC);
     }
 
@@ -160,5 +165,18 @@ class GoalServiceTest {
 
         // (7 + 1) and 6 hours over two nights, not 14 hours over three entries.
         assertThat(metrics.averageSleep7d()).isEqualByComparingTo("7.0");
+    }
+
+    @Test
+    void waterIsAveragedOverTheWholeWeek() {
+        when(water.findByUserIdAndLoggedAtGreaterThanEqualAndLoggedAtLessThanOrderByLoggedAtAsc(
+                        eq(1L), eq(Instant.parse("2026-04-09T00:00:00Z")), eq(Instant.parse("2026-04-16T00:00:00Z"))))
+                .thenReturn(List.of(
+                        new WaterIntake(1L, 2000, NOW, NOW),
+                        new WaterIntake(1L, 1500, NOW.minusSeconds(86_400), NOW)));
+
+        GoalMetrics metrics = service.metrics(1L, ZoneOffset.UTC, LocalDate.of(2026, 4, 15));
+
+        assertThat(metrics.averageDailyWater7d()).isEqualByComparingTo("500");
     }
 }

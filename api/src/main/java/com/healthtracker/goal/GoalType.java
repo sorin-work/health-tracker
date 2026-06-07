@@ -10,7 +10,9 @@ public enum GoalType {
     /** Workouts in the last 7 days. */
     WEEKLY_WORKOUTS("sessions"),
     /** Average nightly sleep over the last 7 days. */
-    SLEEP_HOURS("h");
+    SLEEP_HOURS("h"),
+    /** Average water a day over the last 7 days. */
+    DAILY_WATER("ml");
 
     private final String unit;
 

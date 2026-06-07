@@ -98,6 +98,7 @@ export const GOAL_META: Record<GoalType, { label: string; unit: string; describe
     describe: (t) => `${formatNumber(t)} workouts a week`,
   },
   SLEEP_HOURS: { label: 'Sleep', unit: 'h', describe: (t) => `Sleep ${formatNumber(t, 1)} h a night` },
+  DAILY_WATER: { label: 'Water', unit: 'ml', describe: (t) => `Drink ${formatNumber(t)} ml a day` },
 };
 
 /** Progress bar colour for an adherence percentage: green from 90% up. */

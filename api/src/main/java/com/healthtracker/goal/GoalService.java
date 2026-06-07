@@ -9,6 +9,8 @@ import com.healthtracker.user.UserService;
 import com.healthtracker.vital.VitalReading;
 import com.healthtracker.vital.VitalReadingRepository;
 import com.healthtracker.vital.VitalType;
+import com.healthtracker.water.WaterIntake;
+import com.healthtracker.water.WaterRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Clock;
@@ -29,6 +31,7 @@ public class GoalService {
     private final GoalRepository goals;
     private final VitalReadingRepository readings;
     private final ActivityRepository activities;
+    private final WaterRepository water;
     private final UserService userService;
     private final Clock clock;
 
@@ -36,11 +39,13 @@ public class GoalService {
             GoalRepository goals,
             VitalReadingRepository readings,
             ActivityRepository activities,
+            WaterRepository water,
             UserService userService,
             Clock clock) {
         this.goals = goals;
         this.readings = readings;
         this.activities = activities;
+        this.water = water;
         this.userService = userService;
         this.clock = clock;
     }
@@ -143,7 +148,16 @@ public class GoalService {
                         .reduce(BigDecimal.ZERO, BigDecimal::add)
                         .divide(BigDecimal.valueOf(sleepPerNight.size()), 1, RoundingMode.HALF_UP);
 
-        return new GoalMetrics(weight, steps, minutes, workouts, avgSleep);
+        // Like steps, water is averaged over the whole window: a day without entries counts as zero.
+        int totalWater = water
+                .findByUserIdAndLoggedAtGreaterThanEqualAndLoggedAtLessThanOrderByLoggedAtAsc(userId, windowStart, windowEnd)
+                .stream()
+                .mapToInt(WaterIntake::getAmountMl)
+                .sum();
+        BigDecimal avgWater =
+                BigDecimal.valueOf(totalWater).divide(BigDecimal.valueOf(WINDOW_DAYS), 0, RoundingMode.HALF_UP);
+
+        return new GoalMetrics(weight, steps, minutes, workouts, avgSleep, avgWater);
     }
 
     private GoalResponse toResponse(Goal goal, GoalMetrics metrics, LocalDate today) {

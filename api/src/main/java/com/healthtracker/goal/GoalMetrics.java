@@ -8,7 +8,8 @@ public record GoalMetrics(
         BigDecimal averageDailySteps7d,
         BigDecimal activeMinutes7d,
         BigDecimal workouts7d,
-        BigDecimal averageSleep7d) {
+        BigDecimal averageSleep7d,
+        BigDecimal averageDailyWater7d) {
 
     public BigDecimal valueFor(GoalType type) {
         return switch (type) {
@@ -17,6 +18,7 @@ public record GoalMetrics(
             case WEEKLY_ACTIVE_MINUTES -> activeMinutes7d;
             case WEEKLY_WORKOUTS -> workouts7d;
             case SLEEP_HOURS -> averageSleep7d;
+            case DAILY_WATER -> averageDailyWater7d;
         };
     }
 }

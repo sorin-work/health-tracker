@@ -20,7 +20,7 @@ class GoalProgressCalculatorTest {
     }
 
     private static GoalMetrics weight(String kg) {
-        return new GoalMetrics(new BigDecimal(kg), null, null, null, null);
+        return new GoalMetrics(new BigDecimal(kg), null, null, null, null, null);
     }
 
     @Test
@@ -75,24 +75,27 @@ class GoalProgressCalculatorTest {
     @Test
     void rollingGoalsAreCurrentOverTarget() {
         GoalMetrics metrics = new GoalMetrics(
-                null, new BigDecimal("6000"), new BigDecimal("180"), new BigDecimal("2"), new BigDecimal("7.2"));
+                null, new BigDecimal("6000"), new BigDecimal("180"), new BigDecimal("2"), new BigDecimal("7.2"),
+                new BigDecimal("1500"));
 
         GoalProgress steps = GoalProgressCalculator.progress(goal(GoalType.DAILY_STEPS, "8000", null, null), metrics, START);
         GoalProgress minutes =
                 GoalProgressCalculator.progress(goal(GoalType.WEEKLY_ACTIVE_MINUTES, "150", null, null), metrics, START);
         GoalProgress sleep = GoalProgressCalculator.progress(goal(GoalType.SLEEP_HOURS, "8", null, null), metrics, START);
+        GoalProgress water = GoalProgressCalculator.progress(goal(GoalType.DAILY_WATER, "2000", null, null), metrics, START);
 
         assertThat(steps.percent()).isEqualTo(75.0);
         assertThat(steps.achieved()).isFalse();
         assertThat(minutes.percent()).isEqualTo(100.0);
         assertThat(minutes.achieved()).isTrue();
         assertThat(sleep.percent()).isEqualTo(90.0);
+        assertThat(water.percent()).isEqualTo(75.0);
     }
 
     @Test
     void noDataMeansNoProgress() {
         GoalProgress p = GoalProgressCalculator.progress(
-                goal(GoalType.SLEEP_HOURS, "8", null, null), new GoalMetrics(null, null, null, null, null), START);
+                goal(GoalType.SLEEP_HOURS, "8", null, null), new GoalMetrics(null, null, null, null, null, null), START);
 
         assertThat(p.currentValue()).isNull();
         assertThat(p.percent()).isZero();

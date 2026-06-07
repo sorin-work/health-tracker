@@ -1,6 +1,6 @@
 import { api, toQuery } from './client';
 
-export type GoalType = 'WEIGHT' | 'DAILY_STEPS' | 'WEEKLY_ACTIVE_MINUTES' | 'WEEKLY_WORKOUTS' | 'SLEEP_HOURS';
+export type GoalType = 'WEIGHT' | 'DAILY_STEPS' | 'WEEKLY_ACTIVE_MINUTES' | 'WEEKLY_WORKOUTS' | 'SLEEP_HOURS' | 'DAILY_WATER';
 
 export interface Goal {
   id: number;

@@ -12,6 +12,7 @@ const DEFAULT_TARGETS: Record<GoalType, string> = {
   WEEKLY_ACTIVE_MINUTES: '150',
   WEEKLY_WORKOUTS: '3',
   SLEEP_HOURS: '7.5',
+  DAILY_WATER: '2000',
 };
 
 export function GoalForm({ goal, onDone }: { goal?: Goal; onDone: () => void }) {
