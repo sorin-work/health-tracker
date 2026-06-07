@@ -12,6 +12,7 @@ import { RegisterPage } from './pages/RegisterPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { SymptomsPage } from './pages/SymptomsPage';
 import { VitalsPage } from './pages/VitalsPage';
+import { WaterPage } from './pages/WaterPage';
 
 export function App() {
   return (
@@ -27,6 +28,7 @@ export function App() {
           <Route path="/medications" element={<MedicationsPage />} />
           <Route path="/symptoms" element={<SymptomsPage />} />
           <Route path="/mood" element={<MoodPage />} />
+          <Route path="/water" element={<WaterPage />} />
           <Route path="/activity" element={<ActivityPage />} />
           <Route path="/goals" element={<GoalsPage />} />
           <Route path="/export" element={<ExportPage />} />

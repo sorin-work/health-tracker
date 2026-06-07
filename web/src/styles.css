@@ -1138,6 +1138,33 @@ input[type='range'] {
   color: var(--ok);
 }
 
+/* Water */
+
+.water {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.water__total strong {
+  font-size: 1.5rem;
+}
+
+.water__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.water__custom {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.water__custom input {
+  width: 5.5rem;
+}
+
 /* Accessibility */
 
 .skip-link {

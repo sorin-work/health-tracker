@@ -111,3 +111,9 @@ export const SmileIcon = (p: IconProps) => (
     <path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.5h.01M15 9.5h.01" />
   </Icon>
 );
+
+export const DropIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 3s6 6.6 6 11a6 6 0 0 1-12 0c0-4.4 6-11 6-11z" />
+  </Icon>
+);

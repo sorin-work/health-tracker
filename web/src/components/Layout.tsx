@@ -5,6 +5,7 @@ import { Disclaimer } from './Disclaimer';
 import {
   CloseIcon,
   DownloadIcon,
+  DropIcon,
   HomeIcon,
   LogoutIcon,
   MenuIcon,
@@ -29,6 +30,7 @@ const NAV: NavItem[] = [
   { to: '/medications', label: 'Medications', icon: PillIcon },
   { to: '/symptoms', label: 'Symptoms', icon: NoteIcon },
   { to: '/mood', label: 'Mood', icon: SmileIcon },
+  { to: '/water', label: 'Water', icon: DropIcon },
   { to: '/activity', label: 'Activity', icon: RunIcon },
   { to: '/goals', label: 'Goals', icon: TargetIcon },
   { to: '/export', label: 'Export', icon: DownloadIcon },
