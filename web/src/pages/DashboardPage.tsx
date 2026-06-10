@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router';
 import { listGoals } from '../api/goals';
+import { moodDaily, type MoodDay } from '../api/mood';
 import { adherence, dosesForDay } from '../api/medications';
 import { listVitals, vitalSummary, type VitalSummary } from '../api/vitals';
 import { useUser } from '../auth/AuthContext';
@@ -12,8 +13,8 @@ import { GoalCard } from '../components/GoalCard';
 import { AlertIcon } from '../components/icons';
 import { ProgressBar } from '../components/ProgressBar';
 import { DEFAULT_WATER_TARGET_ML, WaterCard } from '../components/WaterCard';
-import { formatDateTime, presetRange, today } from '../lib/dates';
-import { adherenceTone, formatReading, formatVitalValue, VITAL_META } from '../lib/format';
+import { addDays, formatDateTime, formatShortDate, formatWeekday, presetRange, today } from '../lib/dates';
+import { adherenceTone, formatNumber, formatReading, formatVitalValue, moodLabel, VITAL_META } from '../lib/format';
 
 function greeting(date = new Date()): string {
   const h = date.getHours();
@@ -35,6 +36,12 @@ export function DashboardPage() {
   const flagged = useQuery({
     queryKey: ['vitals', 'list', 'flagged-recent', last30.from],
     queryFn: () => listVitals({ from: last30.from, to: last30.to, flagged: true, size: 5 }),
+  });
+
+  const last7 = presetRange('7d');
+  const mood = useQuery({
+    queryKey: ['mood', 'daily', last7.from, last7.to],
+    queryFn: () => moodDaily(last7.from, last7.to),
   });
 
   const percent = stats.data?.overall.percent;
@@ -116,6 +123,17 @@ export function DashboardPage() {
           </div>
           <WaterCard targetMl={waterTarget} />
         </section>
+
+        <section className="card">
+          <div className="card__header">
+            <h2>Mood this week</h2>
+            <Link to="/mood" className="link">
+              Check in
+            </Link>
+          </div>
+          <ErrorMessage error={mood.error} />
+          {mood.data && <MoodWeek days={mood.data} from={last7.from} />}
+        </section>
       </div>
 
       <section className="card">
@@ -165,5 +183,34 @@ function VitalCard({ summary }: { summary: VitalSummary }) {
         <div className="muted">No readings yet</div>
       )}
     </Link>
+  );
+}
+
+function MoodWeek({ days, from }: { days: MoodDay[]; from: string }) {
+  if (days.length === 0) {
+    return <EmptyState title="No check-ins this week">A quick check-in takes a few seconds.</EmptyState>;
+  }
+  const average = days.reduce((sum, d) => sum + d.mood * d.count, 0) / days.reduce((n, d) => n + d.count, 0);
+  const byDate = new Map(days.map((d) => [d.date, d]));
+  const week = Array.from({ length: 7 }, (_, i) => addDays(from, i));
+  return (
+    <>
+      <p>
+        <strong className="stat-large">{formatNumber(average, 1)}</strong>{' '}
+        <span className="muted">/ 5 on average · {moodLabel(average)}</span>
+      </p>
+      <ol className="mood-week" aria-label="Mood per day">
+        {week.map((date) => {
+          const day = byDate.get(date);
+          const score = day ? Math.round(day.mood) : null;
+          return (
+            <li key={date} title={day ? `${formatShortDate(date)}: ${moodLabel(day.mood)}` : formatShortDate(date)}>
+              <span className={`mood-dot${score ? ` mood-dot--${score}` : ' mood-dot--empty'}`}>{score ?? '·'}</span>
+              <span className="muted small">{formatWeekday(date)}</span>
+            </li>
+          );
+        })}
+      </ol>
+    </>
   );
 }

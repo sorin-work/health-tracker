@@ -52,6 +52,7 @@ export function matchPreset(range: DateRange, end: string = today()): RangePrese
 const dateFormat = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 const shortDateFormat = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' });
 const timeFormat = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' });
+const weekdayFormat = new Intl.DateTimeFormat(undefined, { weekday: 'short' });
 
 export function formatDate(iso: string): string {
   return dateFormat.format(parseISODate(iso));
@@ -59,6 +60,11 @@ export function formatDate(iso: string): string {
 
 export function formatShortDate(iso: string): string {
   return shortDateFormat.format(parseISODate(iso));
+}
+
+/** `Mon`, `Tue`, … for a `YYYY-MM-DD` day. */
+export function formatWeekday(iso: string): string {
+  return weekdayFormat.format(parseISODate(iso));
 }
 
 export function formatDateTime(instant: string): string {
