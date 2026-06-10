@@ -11,6 +11,7 @@ import { FlagBadge } from '../components/FlagBadge';
 import { GoalCard } from '../components/GoalCard';
 import { AlertIcon } from '../components/icons';
 import { ProgressBar } from '../components/ProgressBar';
+import { DEFAULT_WATER_TARGET_ML, WaterCard } from '../components/WaterCard';
 import { formatDateTime, presetRange, today } from '../lib/dates';
 import { adherenceTone, formatReading, formatVitalValue, VITAL_META } from '../lib/format';
 
@@ -37,6 +38,7 @@ export function DashboardPage() {
   });
 
   const percent = stats.data?.overall.percent;
+  const waterTarget = goals.data?.find((g) => g.type === 'DAILY_WATER')?.targetValue ?? DEFAULT_WATER_TARGET_ML;
 
   return (
     <>
@@ -101,6 +103,18 @@ export function DashboardPage() {
           {flagged.data && flagged.data.total > flagged.data.items.length && (
             <p className="muted small">{flagged.data.total} readings flagged in total.</p>
           )}
+        </section>
+      </div>
+
+      <div className="grid grid--2">
+        <section className="card">
+          <div className="card__header">
+            <h2>Water today</h2>
+            <Link to="/water" className="link">
+              History
+            </Link>
+          </div>
+          <WaterCard targetMl={waterTarget} />
         </section>
       </div>
 
