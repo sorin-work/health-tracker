@@ -65,6 +65,14 @@ public class WaterService {
         return days;
     }
 
+    /** Entries in a date range, oldest first. */
+    @Transactional(readOnly = true)
+    public List<WaterEntry> entries(Long userId, LocalDate from, LocalDate to) {
+        return inRange(userId, DateRange.of(from, to, userService.zoneOf(userId))).stream()
+                .map(WaterEntry::from)
+                .toList();
+    }
+
     @Transactional
     public WaterEntry add(Long userId, WaterRequest request) {
         Instant now = clock.instant();

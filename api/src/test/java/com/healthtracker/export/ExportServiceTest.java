@@ -18,6 +18,8 @@ import com.healthtracker.user.UserService;
 import com.healthtracker.vital.VitalService;
 import com.healthtracker.vital.VitalType;
 import com.healthtracker.vital.dto.VitalReadingResponse;
+import com.healthtracker.water.WaterService;
+import com.healthtracker.water.dto.WaterEntry;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
@@ -44,6 +46,7 @@ class ExportServiceTest {
     @Mock SymptomService symptomService;
     @Mock ActivityService activityService;
     @Mock MoodService moodService;
+    @Mock WaterService waterService;
     @Mock UserService userService;
 
     ExportService service;
@@ -51,7 +54,7 @@ class ExportServiceTest {
     @BeforeEach
     void setUp() {
         service = new ExportService(vitalService, medicationService, doseService, symptomService, activityService,
-                moodService, userService, Clock.fixed(Instant.parse("2026-03-01T12:00:00Z"), BERLIN));
+                moodService, waterService, userService, Clock.fixed(Instant.parse("2026-03-01T12:00:00Z"), BERLIN));
         when(userService.zoneOf(1L)).thenReturn(BERLIN);
     }
 
@@ -123,5 +126,15 @@ class ExportServiceTest {
                 "recorded_at,mood,energy,note",
                 "2026-02-02 08:00,4,3,",
                 "2026-02-03 21:00,2,,Rough day");
+    }
+
+    @Test
+    void waterEntriesInLocalTime() {
+        when(waterService.entries(1L, FROM, TO)).thenReturn(List.of(
+                new WaterEntry(1L, 250, Instant.parse("2026-02-02T07:00:00Z"))));
+
+        String csv = service.export(1L, ExportDataset.WATER, FROM, TO).content();
+
+        assertThat(csv.split("\r\n")).containsExactly("logged_at,amount_ml", "2026-02-02 08:00,250");
     }
 }

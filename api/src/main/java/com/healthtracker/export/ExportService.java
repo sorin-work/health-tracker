@@ -10,6 +10,7 @@ import com.healthtracker.mood.MoodService;
 import com.healthtracker.symptom.SymptomService;
 import com.healthtracker.user.UserService;
 import com.healthtracker.vital.VitalService;
+import com.healthtracker.water.WaterService;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -31,6 +32,7 @@ public class ExportService {
     private final SymptomService symptomService;
     private final ActivityService activityService;
     private final MoodService moodService;
+    private final WaterService waterService;
     private final UserService userService;
     private final Clock clock;
 
@@ -41,6 +43,7 @@ public class ExportService {
             SymptomService symptomService,
             ActivityService activityService,
             MoodService moodService,
+            WaterService waterService,
             UserService userService,
             Clock clock) {
         this.vitalService = vitalService;
@@ -49,6 +52,7 @@ public class ExportService {
         this.symptomService = symptomService;
         this.activityService = activityService;
         this.moodService = moodService;
+        this.waterService = waterService;
         this.userService = userService;
         this.clock = clock;
     }
@@ -67,6 +71,7 @@ public class ExportService {
             case SYMPTOMS -> symptoms(userId, start, end, zone);
             case ACTIVITIES -> activities(userId, start, end, zone);
             case MOOD -> mood(userId, start, end, zone);
+            case WATER -> water(userId, start, end, zone);
         };
         String filename = dataset == ExportDataset.MEDICATIONS
                 ? "health-tracker-medications.csv"
@@ -142,6 +147,12 @@ public class ExportService {
         CsvWriter csv = new CsvWriter().row("recorded_at", "mood", "energy", "note");
         moodService.entries(userId, from, to).reversed().forEach(m -> csv.row(
                 local(m.recordedAt(), zone), m.mood(), m.energy(), m.note()));
+        return csv.toString();
+    }
+
+    private String water(Long userId, LocalDate from, LocalDate to, ZoneId zone) {
+        CsvWriter csv = new CsvWriter().row("logged_at", "amount_ml");
+        waterService.entries(userId, from, to).forEach(w -> csv.row(local(w.loggedAt(), zone), w.amountMl()));
         return csv.toString();
     }
 

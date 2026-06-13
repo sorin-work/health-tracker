@@ -23,6 +23,7 @@ const DATASETS: { key: ExportDataset; title: string; description: string; ranged
   { key: 'symptoms', title: 'Symptoms', description: 'Symptom entries with severity and duration.', ranged: true },
   { key: 'activities', title: 'Activity', description: 'Workouts with duration, distance and steps.', ranged: true },
   { key: 'mood', title: 'Mood', description: 'Mood and energy check-ins with notes.', ranged: true },
+  { key: 'water', title: 'Water', description: 'Every glass with the time it was logged.', ranged: true },
 ];
 
 export function ExportPage() {
