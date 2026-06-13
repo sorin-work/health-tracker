@@ -89,10 +89,11 @@ public class DemoDataSeeder implements ApplicationRunner {
         int symptoms = seedSymptoms(userId, first, today, now, random);
         int activities = seedActivities(userId, first, today, now, random);
         int moods = seedMood(userId, first, today, now, random);
+        int glasses = seedWater(userId, first, today, now, random);
         seedGoals(userId, today, now);
 
-        log.info("Seeded demo user {} with {} readings, {} dose logs, {} symptoms, {} activities and {} mood check-ins",
-                DEMO_EMAIL, readings, doses, symptoms, activities, moods);
+        log.info("Seeded demo user {} with {} readings, {} dose logs, {} symptoms, {} activities, {} mood check-ins"
+                + " and {} water entries", DEMO_EMAIL, readings, doses, symptoms, activities, moods, glasses);
     }
 
     private int seedVitals(Long userId, LocalDate first, LocalDate today, Instant now, Random random) {
@@ -303,6 +304,25 @@ public class DemoDataSeeder implements ApplicationRunner {
         return rows.size();
     }
 
+    private int seedWater(Long userId, LocalDate first, LocalDate today, Instant now, Random random) {
+        // Water tracking started a few months in; most days get a handful of glasses.
+        int[] sizes = {200, 250, 250, 330, 500};
+        List<Object[]> rows = new ArrayList<>();
+        for (LocalDate day = today.minusDays(150); !day.isAfter(today); day = day.plusDays(1)) {
+            if (day.isBefore(first) || random.nextDouble() < 0.15) {
+                continue;
+            }
+            int glasses = 4 + random.nextInt(5);
+            for (int i = 0; i < glasses; i++) {
+                int hour = 7 + i * 14 / glasses;
+                rows.add(new Object[] {userId, sizes[random.nextInt(sizes.length)], odt(at(day, hour, 40, random)), odt(now)});
+            }
+        }
+        rows.removeIf(r -> ((OffsetDateTime) r[2]).toInstant().isAfter(now));
+        jdbc.batchUpdate("insert into water_intake (user_id, amount_ml, logged_at, created_at) values (?, ?, ?, ?)", rows);
+        return rows.size();
+    }
+
     private void seedGoals(Long userId, LocalDate today, Instant now) {
         String sql = "insert into goals (user_id, type, target_value, start_value, start_date, target_date, notes, created_at)"
                 + " values (?, ?, ?, ?, ?, ?, ?, ?)";
@@ -314,6 +334,8 @@ public class DemoDataSeeder implements ApplicationRunner {
                 today.minusDays(120), null, "WHO recommendation", odt(now));
         jdbc.update(sql, userId, GoalType.SLEEP_HOURS.name(), new BigDecimal("7.5"), null,
                 today.minusDays(60), null, null, odt(now));
+        jdbc.update(sql, userId, GoalType.DAILY_WATER.name(), new BigDecimal("2000"), null,
+                today.minusDays(150), null, null, odt(now));
     }
 
     private Medication medication(Long userId, String name, String dosage, String instructions,
