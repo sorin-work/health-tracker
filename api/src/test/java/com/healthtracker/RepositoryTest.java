@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.healthtracker.medication.Medication;
 import com.healthtracker.medication.MedicationRepository;
+import com.healthtracker.mood.MoodEntry;
+import com.healthtracker.mood.MoodRepository;
 import com.healthtracker.symptom.Symptom;
 import com.healthtracker.symptom.SymptomRepository;
 import com.healthtracker.user.User;
@@ -11,6 +13,8 @@ import com.healthtracker.user.UserRepository;
 import com.healthtracker.vital.VitalReading;
 import com.healthtracker.vital.VitalReadingRepository;
 import com.healthtracker.vital.VitalType;
+import com.healthtracker.water.WaterIntake;
+import com.healthtracker.water.WaterRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -39,6 +43,8 @@ class RepositoryTest {
     @Autowired VitalReadingRepository readings;
     @Autowired SymptomRepository symptoms;
     @Autowired MedicationRepository medications;
+    @Autowired MoodRepository moods;
+    @Autowired WaterRepository water;
 
     Long userId;
     Long otherUserId;
@@ -120,5 +126,33 @@ class RepositoryTest {
         Medication loaded = medications.findByIdAndUserId(id, userId).orElseThrow();
         assertThat(loaded.getTimes()).containsExactly(LocalTime.of(8, 0), LocalTime.of(20, 0));
         assertThat(medications.findByIdAndUserId(id, otherUserId)).isEmpty();
+    }
+
+    @Test
+    void moodEntriesInRangeAreNewestFirst() {
+        for (String at : List.of("2026-05-01T08:00:00Z", "2026-05-03T08:00:00Z", "2026-06-01T08:00:00Z")) {
+            MoodEntry e = new MoodEntry(userId, Instant.EPOCH);
+            e.setMood(3);
+            e.setRecordedAt(Instant.parse(at));
+            moods.save(e);
+        }
+
+        List<MoodEntry> may = moods.findByUserIdAndRecordedAtGreaterThanEqualAndRecordedAtLessThanOrderByRecordedAtDesc(
+                userId, Instant.parse("2026-05-01T00:00:00Z"), Instant.parse("2026-06-01T00:00:00Z"));
+
+        assertThat(may).extracting(MoodEntry::getRecordedAt)
+                .containsExactly(Instant.parse("2026-05-03T08:00:00Z"), Instant.parse("2026-05-01T08:00:00Z"));
+    }
+
+    @Test
+    void waterInRangeIsOldestFirstAndScopedToTheUser() {
+        water.save(new WaterIntake(userId, 500, Instant.parse("2026-06-10T12:00:00Z"), Instant.EPOCH));
+        water.save(new WaterIntake(userId, 250, Instant.parse("2026-06-10T07:00:00Z"), Instant.EPOCH));
+        water.save(new WaterIntake(otherUserId, 330, Instant.parse("2026-06-10T08:00:00Z"), Instant.EPOCH));
+
+        List<WaterIntake> day = water.findByUserIdAndLoggedAtGreaterThanEqualAndLoggedAtLessThanOrderByLoggedAtAsc(
+                userId, Instant.parse("2026-06-10T00:00:00Z"), Instant.parse("2026-06-11T00:00:00Z"));
+
+        assertThat(day).extracting(WaterIntake::getAmountMl).containsExactly(250, 500);
     }
 }
