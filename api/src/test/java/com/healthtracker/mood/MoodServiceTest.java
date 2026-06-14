@@ -14,6 +14,7 @@ import com.healthtracker.mood.dto.MoodResponse;
 import com.healthtracker.user.UserService;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -76,5 +77,12 @@ class MoodServiceTest {
 
         verify(moods).findByUserIdAndRecordedAtGreaterThanEqualAndRecordedAtLessThanOrderByRecordedAtDesc(
                 eq(1L), eq(Instant.parse("2026-04-21T00:00:00Z")), eq(Instant.parse("2026-05-21T00:00:00Z")));
+    }
+
+    @Test
+    void dailyRangeIsLimitedToAYear() {
+        assertThatThrownBy(() -> service.daily(1L, LocalDate.of(2020, 1, 1), LocalDate.of(2026, 5, 20)))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("at most 366 days");
     }
 }

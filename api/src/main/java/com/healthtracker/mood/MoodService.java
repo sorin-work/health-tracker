@@ -10,12 +10,15 @@ import com.healthtracker.user.UserService;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class MoodService {
+
+    static final int MAX_RANGE_DAYS = 366;
 
     private final MoodRepository moods;
     private final UserService userService;
@@ -45,6 +48,9 @@ public class MoodService {
         ZoneId zone = userService.zoneOf(userId);
         LocalDate end = to != null ? to : LocalDate.now(clock.withZone(zone));
         LocalDate start = from != null ? from : end.minusDays(29);
+        if (ChronoUnit.DAYS.between(start, end) >= MAX_RANGE_DAYS) {
+            throw ApiException.badRequest("Pick a range of at most " + MAX_RANGE_DAYS + " days");
+        }
         return MoodStats.daily(inRange(userId, DateRange.of(start, end, zone)), zone);
     }
 
