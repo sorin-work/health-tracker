@@ -32,6 +32,10 @@ public final class CsvWriter {
             return "";
         }
         String s = value.toString();
+        // Spreadsheet apps execute cells that start with these as formulas.
+        if (!(value instanceof Number) && !s.isEmpty() && "=+-@\t\r".indexOf(s.charAt(0)) >= 0) {
+            s = "'" + s;
+        }
         if (s.contains(",") || s.contains("\"") || s.contains("\n") || s.contains("\r")) {
             return "\"" + s.replace("\"", "\"\"") + "\"";
         }
