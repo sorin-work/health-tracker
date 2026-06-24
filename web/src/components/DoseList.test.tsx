@@ -26,12 +26,19 @@ describe('DoseList', () => {
 
   it('marks a pending dose as taken', async () => {
     const dose: Dose = { ...base, scheduledAt: '2026-01-20T19:00:00Z', status: 'PENDING' };
-    renderWithProviders(<DoseList doses={[dose]} />);
+    renderWithProviders(<DoseList doses={[dose]} now={new Date('2026-01-20T12:00:00Z')} />);
 
     expect(screen.getByText('Due')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /as taken/ }));
 
     expect(medicationsApi.recordDose).toHaveBeenCalledWith(3, '2026-01-20T19:00:00Z', 'TAKEN');
+  });
+
+  it('shows past pending doses as overdue', () => {
+    const dose: Dose = { ...base, scheduledAt: '2026-01-20T07:00:00Z', status: 'PENDING' };
+    renderWithProviders(<DoseList doses={[dose]} now={new Date('2026-01-20T12:00:00Z')} />);
+
+    expect(screen.getByText('Overdue')).toBeInTheDocument();
   });
 
   it('can skip a dose', async () => {

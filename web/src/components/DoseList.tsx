@@ -11,7 +11,7 @@ const STATUS_LABELS: Record<DoseStatus, string> = {
 };
 
 /** A day's doses with buttons to mark each one taken or skipped (or undo that). */
-export function DoseList({ doses }: { doses: Dose[] }) {
+export function DoseList({ doses, now = new Date() }: { doses: Dose[]; now?: Date }) {
   const queryClient = useQueryClient();
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['doses'] });
@@ -29,6 +29,8 @@ export function DoseList({ doses }: { doses: Dose[] }) {
       <ErrorMessage error={record.error ?? undo.error} />
       <ul className="dose-list">
         {doses.map((dose) => {
+          const overdue = dose.status === 'PENDING' && new Date(dose.scheduledAt) < now;
+          const statusLabel = overdue ? 'Overdue' : STATUS_LABELS[dose.status];
           return (
             <li key={`${dose.medicationId}-${dose.scheduledAt}`} className={`dose dose--${dose.status.toLowerCase()}`}>
               <span className="dose__time">{dose.asNeeded ? 'As needed' : formatTime(dose.scheduledAt)}</span>
@@ -36,7 +38,7 @@ export function DoseList({ doses }: { doses: Dose[] }) {
                 <strong>{dose.medicationName}</strong>
                 {dose.dosage && <span className="muted"> · {dose.dosage}</span>}
               </span>
-              <span className={`status status--${dose.status.toLowerCase()}`}>{STATUS_LABELS[dose.status]}</span>
+              <span className={`status status--${overdue ? 'overdue' : dose.status.toLowerCase()}`}>{statusLabel}</span>
               <span className="dose__actions">
                 {dose.status === 'PENDING' || dose.status === 'MISSED' ? (
                   <>
