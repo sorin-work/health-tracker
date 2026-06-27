@@ -2,6 +2,8 @@ package com.healthtracker.user;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -28,6 +30,14 @@ public class User {
 
     @Column(nullable = false)
     private String timezone = "UTC";
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "unit_system", nullable = false, length = 16)
+    private UnitSystem unitSystem = UnitSystem.METRIC;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "glucose_unit", nullable = false, length = 16)
+    private GlucoseUnit glucoseUnit = GlucoseUnit.MG_DL;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
@@ -76,6 +86,22 @@ public class User {
 
     public void setTimezone(String timezone) {
         this.timezone = timezone;
+    }
+
+    public UnitSystem getUnitSystem() {
+        return unitSystem;
+    }
+
+    public void setUnitSystem(UnitSystem unitSystem) {
+        this.unitSystem = unitSystem;
+    }
+
+    public GlucoseUnit getGlucoseUnit() {
+        return glucoseUnit;
+    }
+
+    public void setGlucoseUnit(GlucoseUnit glucoseUnit) {
+        this.glucoseUnit = glucoseUnit;
     }
 
     public Instant getCreatedAt() {

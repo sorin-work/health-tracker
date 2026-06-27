@@ -31,6 +31,12 @@ public class UserService {
         User user = get(userId);
         user.setDisplayName(request.displayName().trim());
         user.setTimezone(Timezones.validate(request.timezone()));
+        if (request.unitSystem() != null) {
+            user.setUnitSystem(request.unitSystem());
+        }
+        if (request.glucoseUnit() != null) {
+            user.setGlucoseUnit(request.glucoseUnit());
+        }
         return UserResponse.from(user);
     }
 }

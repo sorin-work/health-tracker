@@ -40,7 +40,7 @@ class AuthControllerTest {
     @MockitoBean
     JwtService jwtService;
 
-    private final UserResponse sam = new UserResponse(1L, "sam@example.com", "Sam", "UTC", Instant.EPOCH);
+    private final UserResponse sam = new UserResponse(1L, "sam@example.com", "Sam", "UTC", UnitSystem.METRIC, GlucoseUnit.MG_DL, Instant.EPOCH);
 
     @BeforeEach
     void setUp() {
