@@ -7,6 +7,7 @@ import { ErrorMessage } from '../components/ErrorMessage';
 import { Field } from '../components/Field';
 import { PageHeader } from '../components/PageHeader';
 import { formatNumber } from '../lib/format';
+import type { GlucoseUnit, UnitSystem } from '../lib/units';
 
 function timezones(): string[] {
   const intl = Intl as unknown as { supportedValuesOf?: (key: string) => string[] };
@@ -34,6 +35,8 @@ function ProfileForm() {
   const queryClient = useQueryClient();
   const [displayName, setDisplayName] = useState(user.displayName);
   const [timezone, setTimezone] = useState(user.timezone);
+  const [unitSystem, setUnitSystem] = useState<UnitSystem>(user.unitSystem ?? 'METRIC');
+  const [glucoseUnit, setGlucoseUnit] = useState<GlucoseUnit>(user.glucoseUnit ?? 'MG_DL');
   const [saved, setSaved] = useState(false);
   const zones = timezones();
 
@@ -50,7 +53,7 @@ function ProfileForm() {
   function submit(e: FormEvent) {
     e.preventDefault();
     setSaved(false);
-    mutation.mutate({ displayName: displayName.trim(), timezone });
+    mutation.mutate({ displayName: displayName.trim(), timezone, unitSystem, glucoseUnit });
   }
 
   return (
@@ -77,6 +80,20 @@ function ProfileForm() {
             <input required value={timezone} onChange={(e) => setTimezone(e.target.value)} />
           )}
         </Field>
+        <div className="form__row">
+          <Field label="Units" hint="Weight, distance and water">
+            <select value={unitSystem} onChange={(e) => setUnitSystem(e.target.value as UnitSystem)}>
+              <option value="METRIC">Metric (kg, km, ml)</option>
+              <option value="IMPERIAL">Imperial (lb, mi, fl oz)</option>
+            </select>
+          </Field>
+          <Field label="Blood glucose">
+            <select value={glucoseUnit} onChange={(e) => setGlucoseUnit(e.target.value as GlucoseUnit)}>
+              <option value="MG_DL">mg/dL</option>
+              <option value="MMOL_L">mmol/L</option>
+            </select>
+          </Field>
+        </div>
         <ErrorMessage error={mutation.error} />
         {saved && (
           <div className="alert alert--success" role="status">

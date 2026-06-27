@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import * as authApi from '../api/auth';
 import type { User } from '../api/auth';
 import { getToken, setToken, setUnauthorizedHandler } from '../api/client';
+import { METRIC, type UnitPrefs } from '../lib/units';
 
 export const ME_QUERY_KEY = ['me'] as const;
 
@@ -80,4 +81,13 @@ export function useUser(): User {
   const { user } = useAuth();
   if (!user) throw new Error('useUser called without a signed-in user');
   return user;
+}
+
+/** The signed-in user's unit preferences, or metric when nobody is signed in (or in tests). */
+export function useUnitPrefs(): UnitPrefs {
+  const user = useContext(AuthContext)?.user;
+  return useMemo(
+    () => (user ? { unitSystem: user.unitSystem ?? 'METRIC', glucoseUnit: user.glucoseUnit ?? 'MG_DL' } : METRIC),
+    [user],
+  );
 }

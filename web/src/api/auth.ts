@@ -1,3 +1,4 @@
+import type { GlucoseUnit, UnitSystem } from '../lib/units';
 import { api } from './client';
 
 export interface User {
@@ -5,6 +6,8 @@ export interface User {
   email: string;
   displayName: string;
   timezone: string;
+  unitSystem: UnitSystem;
+  glucoseUnit: GlucoseUnit;
   createdAt: string;
 }
 
@@ -28,5 +31,11 @@ export const register = (payload: RegisterPayload) => api.post<AuthResponse>('/a
 
 export const fetchMe = () => api.get<User>('/me');
 
-export const updateProfile = (payload: { displayName: string; timezone: string }) =>
-  api.put<User>('/me', payload);
+export interface ProfilePayload {
+  displayName: string;
+  timezone: string;
+  unitSystem?: UnitSystem;
+  glucoseUnit?: GlucoseUnit;
+}
+
+export const updateProfile = (payload: ProfilePayload) => api.put<User>('/me', payload);
