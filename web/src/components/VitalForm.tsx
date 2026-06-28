@@ -9,10 +9,21 @@ import {
   type VitalReading,
   type VitalType,
 } from '../api/vitals';
+import { useUnitPrefs } from '../auth/AuthContext';
 import { fromLocalInputValue, toLocalInputValue } from '../lib/dates';
 import { GLUCOSE_CONTEXT_LABELS, VITAL_META, VITAL_TYPES } from '../lib/format';
+import { vitalDecimals, vitalFromDisplay, vitalToDisplay, vitalUnit, type UnitPrefs } from '../lib/units';
 import { ErrorMessage } from './ErrorMessage';
 import { Field } from './Field';
+
+const PLACEHOLDERS: Record<string, string> = { lb: '160', 'mmol/L': '5.4' };
+
+/** The reading's value as the user would type it, e.g. `176.4` lb for a stored 80 kg. */
+function initialValue(reading: VitalReading, prefs: UnitPrefs): string {
+  const decimals = vitalDecimals(reading.type, prefs);
+  const shown = vitalToDisplay(reading.type, reading.value, prefs);
+  return String(Number(shown.toFixed(decimals)));
+}
 
 export function VitalForm({
   reading,
@@ -24,8 +35,9 @@ export function VitalForm({
   onDone: () => void;
 }) {
   const queryClient = useQueryClient();
+  const prefs = useUnitPrefs();
   const [type, setType] = useState<VitalType>(reading?.type ?? defaultType);
-  const [value, setValue] = useState(reading ? String(reading.value) : '');
+  const [value, setValue] = useState(reading ? initialValue(reading, prefs) : '');
   const [secondary, setSecondary] = useState(reading?.secondaryValue ? String(reading.secondaryValue) : '');
   const [context, setContext] = useState<GlucoseContext>(reading?.glucoseContext ?? 'FASTING');
   const [measuredAt, setMeasuredAt] = useState(
@@ -43,13 +55,15 @@ export function VitalForm({
   });
 
   const meta = VITAL_META[type];
+  const unit = vitalUnit(type, prefs);
+  const decimals = vitalDecimals(type, prefs);
   const fields = mutation.error instanceof ApiError ? mutation.error.fields : {};
 
   function submit(e: FormEvent) {
     e.preventDefault();
     mutation.mutate({
       type,
-      value: Number(value),
+      value: vitalFromDisplay(type, Number(value), prefs),
       secondaryValue: type === 'BLOOD_PRESSURE' ? Number(secondary) : null,
       glucoseContext: type === 'BLOOD_GLUCOSE' ? context : null,
       measuredAt: fromLocalInputValue(measuredAt),
@@ -79,15 +93,15 @@ export function VitalForm({
           </Field>
         </div>
       ) : (
-        <Field label={`${meta.label} (${meta.unit})`} error={fields.value}>
+        <Field label={`${meta.label} (${unit})`} error={fields.value}>
           <input
             type="number"
             inputMode="decimal"
-            step={meta.decimals > 0 ? '0.1' : '1'}
+            step={decimals > 0 ? '0.1' : '1'}
             required
             min={0}
             value={value}
-            placeholder={meta.placeholder}
+            placeholder={PLACEHOLDERS[unit] ?? meta.placeholder}
             onChange={(e) => setValue(e.target.value)}
           />
         </Field>

@@ -10,10 +10,13 @@ vi.mock('../api/vitals', () => ({
   createVital: vi.fn(),
   updateVital: vi.fn(),
 }));
+const prefs = vi.hoisted(() => ({ current: { unitSystem: 'METRIC', glucoseUnit: 'MG_DL' } }));
+vi.mock('../auth/AuthContext', () => ({ useUnitPrefs: () => prefs.current }));
 
 describe('VitalForm', () => {
   beforeEach(() => {
     vi.mocked(vitalsApi.createVital).mockReset();
+    prefs.current = { unitSystem: 'METRIC', glucoseUnit: 'MG_DL' };
   });
 
   it('asks for both numbers for blood pressure', async () => {
@@ -54,5 +57,31 @@ describe('VitalForm', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Weight must be between 20 and 400');
     expect(onDone).not.toHaveBeenCalled();
+  });
+
+  it('takes weight in pounds and stores kilograms', async () => {
+    prefs.current = { unitSystem: 'IMPERIAL', glucoseUnit: 'MG_DL' };
+    vi.mocked(vitalsApi.createVital).mockResolvedValue({} as vitalsApi.VitalReading);
+    renderWithProviders(<VitalForm defaultType="WEIGHT" onDone={() => {}} />);
+
+    await userEvent.type(screen.getByLabelText('Weight (lb)'), '176.4');
+    await userEvent.click(screen.getByRole('button', { name: 'Add reading' }));
+
+    expect(vitalsApi.createVital).toHaveBeenCalledWith(expect.objectContaining({ type: 'WEIGHT', value: 80.01 }));
+  });
+
+  it('shows an existing glucose reading in mmol/L', () => {
+    prefs.current = { unitSystem: 'METRIC', glucoseUnit: 'MMOL_L' };
+    const reading: vitalsApi.VitalReading = {
+      id: 3,
+      type: 'BLOOD_GLUCOSE',
+      value: 108,
+      unit: 'mg/dL',
+      glucoseContext: 'FASTING',
+      measuredAt: '2026-06-01T06:30:00Z',
+    };
+    renderWithProviders(<VitalForm reading={reading} onDone={() => {}} />);
+
+    expect(screen.getByLabelText('Blood glucose (mmol/L)')).toHaveValue(6);
   });
 });
