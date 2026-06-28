@@ -37,4 +37,12 @@ describe('format', () => {
     expect(severityLabel(8)).toBe('Severe');
     expect(severityLabel(10)).toBe('Very severe');
   });
+
+  it('formats readings in the user\'s units', () => {
+    const imperial = { unitSystem: 'IMPERIAL', glucoseUnit: 'MMOL_L' } as const;
+
+    expect(formatReading({ type: 'WEIGHT', value: 80 }, imperial)).toBe('176.4 lb');
+    expect(formatReading({ type: 'BLOOD_GLUCOSE', value: 108 }, imperial)).toBe('6.0 mmol/L');
+    expect(formatReading({ type: 'BLOOD_PRESSURE', value: 128, secondaryValue: 82 }, imperial)).toBe('128/82 mmHg');
+  });
 });

@@ -1,6 +1,7 @@
 import type { ActivityType } from '../api/activities';
 import type { GoalType } from '../api/goals';
 import type { Flag, GlucoseContext, VitalReading, VitalType } from '../api/vitals';
+import { METRIC, vitalDecimals, vitalToDisplay, vitalUnit, type UnitPrefs } from './units';
 
 export interface VitalMeta {
   label: string;
@@ -48,17 +49,24 @@ export function formatNumber(value: number | null | undefined, decimals = 0): st
   });
 }
 
-/** `128/82`, `82.4`, `7.5` – without the unit. */
-export function formatVitalValue(type: VitalType, value: number, secondary?: number | null): string {
-  const { decimals } = VITAL_META[type];
+/** `128/82`, `82.4`, `7.5` – without the unit, converted to the user's units. */
+export function formatVitalValue(
+  type: VitalType,
+  value: number,
+  secondary?: number | null,
+  prefs: UnitPrefs = METRIC,
+): string {
   if (type === 'BLOOD_PRESSURE' && secondary !== undefined && secondary !== null) {
     return `${formatNumber(value, 0)}/${formatNumber(secondary, 0)}`;
   }
-  return formatNumber(value, decimals);
+  return formatNumber(vitalToDisplay(type, value, prefs), vitalDecimals(type, prefs));
 }
 
-export function formatReading(reading: Pick<VitalReading, 'type' | 'value' | 'secondaryValue'>): string {
-  return `${formatVitalValue(reading.type, reading.value, reading.secondaryValue)} ${VITAL_META[reading.type].unit}`;
+export function formatReading(
+  reading: Pick<VitalReading, 'type' | 'value' | 'secondaryValue'>,
+  prefs: UnitPrefs = METRIC,
+): string {
+  return `${formatVitalValue(reading.type, reading.value, reading.secondaryValue, prefs)} ${vitalUnit(reading.type, prefs)}`;
 }
 
 /** 95 -> `1 h 35 min`, 40 -> `40 min` */

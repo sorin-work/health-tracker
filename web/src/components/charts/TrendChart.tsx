@@ -28,11 +28,16 @@ export function TrendChart({
   points,
   band,
   secondaryBand,
+  unit,
+  decimals,
 }: {
   type: VitalType;
+  /** Already converted to the units the chart should show. */
   points: TrendPoint[];
   band?: Band;
   secondaryBand?: Band;
+  unit?: string;
+  decimals?: number;
 }) {
   const meta = VITAL_META[type];
   const isBp = type === 'BLOOD_PRESSURE';
@@ -72,7 +77,10 @@ export function TrendChart({
           )}
           <Tooltip
             labelFormatter={(label) => formatShortDate(String(label))}
-            formatter={(value, name) => [`${formatNumber(Number(value), meta.decimals)} ${meta.unit}`, name]}
+            formatter={(value, name) => [
+              `${formatNumber(Number(value), decimals ?? meta.decimals)} ${unit ?? meta.unit}`,
+              name,
+            ]}
             contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8 }}
           />
           {isBp && <Legend verticalAlign="top" height={28} iconType="plainline" />}

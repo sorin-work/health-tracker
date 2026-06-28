@@ -10,6 +10,7 @@ import {
   type VitalReading,
   type VitalType,
 } from '../api/vitals';
+import { useUnitPrefs } from '../auth/AuthContext';
 import { TrendChart } from '../components/charts/TrendChart';
 import { DateRangePicker } from '../components/DateRangePicker';
 import { EmptyState } from '../components/EmptyState';
@@ -22,6 +23,7 @@ import { VitalForm } from '../components/VitalForm';
 import { formatDateTime, presetRange, type DateRange } from '../lib/dates';
 import { formatNumber, formatVitalValue, GLUCOSE_CONTEXT_LABELS, VITAL_META, VITAL_TYPES } from '../lib/format';
 import { bandsFor } from '../lib/ranges';
+import { bandToDisplay, trendToDisplay, vitalDecimals, vitalUnit } from '../lib/units';
 
 const PAGE_SIZE = 25;
 
@@ -67,9 +69,11 @@ export function VitalsPage() {
     },
   });
 
+  const prefs = useUnitPrefs();
   const meta = VITAL_META[type];
+  const unit = vitalUnit(type, prefs);
   const [band, secondaryBand] = bandsFor(type, ranges.data);
-  const points = trend.data ?? [];
+  const points = trendToDisplay(type, trend.data ?? [], prefs);
   const total = readings.data?.total ?? 0;
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -102,13 +106,20 @@ export function VitalsPage() {
       <section className="card">
         <div className="card__header card__header--wrap">
           <h2>
-            {meta.label} <span className="muted">({meta.unit})</span>
+            {meta.label} <span className="muted">({unit})</span>
           </h2>
           <DateRangePicker value={range} onChange={(r) => update({ range: r })} />
         </div>
         <ErrorMessage error={trend.error} />
         {points.length > 0 ? (
-          <TrendChart type={type} points={points} band={band} secondaryBand={secondaryBand} />
+          <TrendChart
+            type={type}
+            points={points}
+            band={bandToDisplay(type, band, prefs)}
+            secondaryBand={secondaryBand}
+            unit={unit}
+            decimals={vitalDecimals(type, prefs)}
+          />
         ) : (
           !trend.isPending && <EmptyState title={`No ${meta.label.toLowerCase()} readings in this period`} />
         )}
@@ -143,7 +154,7 @@ export function VitalsPage() {
                   <tr key={r.id}>
                     <td>{formatDateTime(r.measuredAt)}</td>
                     <td className="num">
-                      {formatVitalValue(r.type, r.value, r.secondaryValue)} <span className="muted">{r.unit}</span>
+                      {formatVitalValue(r.type, r.value, r.secondaryValue, prefs)} <span className="muted">{unit}</span>
                       {r.glucoseContext && <div className="muted small">{GLUCOSE_CONTEXT_LABELS[r.glucoseContext]}</div>}
                     </td>
                     <td>
@@ -199,8 +210,11 @@ export function VitalsPage() {
   );
 }
 
+/** Stats for points that are already in the user's units. */
 function TrendSummary({ type, points }: { type: VitalType; points: TrendPoint[] }) {
-  const { decimals, unit } = VITAL_META[type];
+  const prefs = useUnitPrefs();
+  const decimals = vitalDecimals(type, prefs);
+  const unit = vitalUnit(type, prefs);
   const count = points.reduce((n, p) => n + p.count, 0);
   const flagged = points.reduce((n, p) => n + p.flagged, 0);
   const avg = points.reduce((s, p) => s + p.average * p.count, 0) / count;
@@ -218,7 +232,10 @@ function TrendSummary({ type, points }: { type: VitalType; points: TrendPoint[] 
       <div>
         <dt>Average</dt>
         <dd>
-          {formatVitalValue(type, avg, avgSecondary)} {unit}
+          {type === 'BLOOD_PRESSURE' && avgSecondary !== undefined
+            ? `${formatNumber(avg, 0)}/${formatNumber(avgSecondary, 0)}`
+            : formatNumber(avg, decimals)}{' '}
+          {unit}
         </dd>
       </div>
       <div>

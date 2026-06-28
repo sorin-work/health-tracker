@@ -4,7 +4,7 @@ import { listGoals } from '../api/goals';
 import { moodDaily, type MoodDay } from '../api/mood';
 import { adherence, dosesForDay } from '../api/medications';
 import { listVitals, vitalSummary, type VitalSummary } from '../api/vitals';
-import { useUser } from '../auth/AuthContext';
+import { useUnitPrefs, useUser } from '../auth/AuthContext';
 import { DoseList } from '../components/DoseList';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorMessage } from '../components/ErrorMessage';
@@ -13,6 +13,7 @@ import { GoalCard } from '../components/GoalCard';
 import { AlertIcon } from '../components/icons';
 import { ProgressBar } from '../components/ProgressBar';
 import { DEFAULT_WATER_TARGET_ML, WaterCard } from '../components/WaterCard';
+import { vitalUnit } from '../lib/units';
 import { addDays, formatDateTime, formatShortDate, formatWeekday, presetRange, today } from '../lib/dates';
 import { adherenceTone, formatNumber, formatReading, formatVitalValue, moodLabel, VITAL_META } from '../lib/format';
 
@@ -25,6 +26,7 @@ function greeting(date = new Date()): string {
 
 export function DashboardPage() {
   const user = useUser();
+  const prefs = useUnitPrefs();
   const last30 = presetRange('30d');
   const summary = useQuery({ queryKey: ['vitals', 'summary'], queryFn: vitalSummary });
   const doses = useQuery({ queryKey: ['doses', today()], queryFn: () => dosesForDay(today()) });
@@ -100,7 +102,7 @@ export function DashboardPage() {
             {flagged.data?.items.map((r) => (
               <li key={r.id}>
                 <span>
-                  <strong>{VITAL_META[r.type].label}</strong> {formatReading(r)}
+                  <strong>{VITAL_META[r.type].label}</strong> {formatReading(r, prefs)}
                   <div className="muted small">{formatDateTime(r.measuredAt)}</div>
                 </span>
                 <FlagBadge flag={r.flag} />
@@ -157,6 +159,7 @@ export function DashboardPage() {
 }
 
 function VitalCard({ summary }: { summary: VitalSummary }) {
+  const prefs = useUnitPrefs();
   const meta = VITAL_META[summary.type];
   const latest = summary.latest;
   return (
@@ -165,8 +168,8 @@ function VitalCard({ summary }: { summary: VitalSummary }) {
       {latest ? (
         <>
           <div className="vital-card__value">
-            {formatVitalValue(latest.type, latest.value, latest.secondaryValue)}
-            <span className="vital-card__unit">{meta.unit}</span>
+            {formatVitalValue(latest.type, latest.value, latest.secondaryValue, prefs)}
+            <span className="vital-card__unit">{vitalUnit(summary.type, prefs)}</span>
           </div>
           <div className="vital-card__meta">
             <FlagBadge flag={latest.flag} />
@@ -174,7 +177,7 @@ function VitalCard({ summary }: { summary: VitalSummary }) {
           </div>
           {summary.average30d !== undefined && (
             <div className="muted small">
-              30-day avg {formatVitalValue(summary.type, summary.average30d, summary.averageSecondary30d)}
+              30-day avg {formatVitalValue(summary.type, summary.average30d, summary.averageSecondary30d, prefs)}
               {summary.flagged30d > 0 && ` · ${summary.flagged30d} flagged`}
             </div>
           )}

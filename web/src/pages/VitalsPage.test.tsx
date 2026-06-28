@@ -15,6 +15,8 @@ vi.mock('../api/vitals', () => ({
   updateVital: vi.fn(),
 }));
 vi.mock('../api/ranges', () => ({ listRanges: vi.fn() }));
+const prefs = vi.hoisted(() => ({ current: { unitSystem: 'METRIC', glucoseUnit: 'MG_DL' } }));
+vi.mock('../auth/AuthContext', () => ({ useUnitPrefs: () => prefs.current }));
 
 function reading(id: number): VitalReading {
   return { id, type: 'WEIGHT', value: 80 + id / 10, unit: 'kg', measuredAt: '2026-03-01T07:00:00Z', flag: 'NORMAL' };
@@ -33,6 +35,7 @@ describe('VitalsPage', () => {
           : { items: [reading(26)], page: 1, size: 25, total: 26 },
       );
     vi.spyOn(window, 'confirm').mockReturnValue(true);
+    prefs.current = { unitSystem: 'METRIC', glucoseUnit: 'MG_DL' };
   });
 
   it('goes back a page after deleting the last reading on the last page', async () => {
@@ -57,5 +60,14 @@ describe('VitalsPage', () => {
 
     expect(await screen.findByText('125/83 mmHg')).toBeInTheDocument();
     expect(screen.getByText('Lowest systolic')).toBeInTheDocument();
+  });
+
+  it('shows weights in pounds for imperial users', async () => {
+    prefs.current = { unitSystem: 'IMPERIAL', glucoseUnit: 'MG_DL' };
+    vi.mocked(vitalsApi.listVitals).mockResolvedValue({ items: [reading(0)], page: 0, size: 25, total: 1 });
+    renderWithProviders(<VitalsPage />, { route: '/vitals?type=WEIGHT' });
+
+    expect(await screen.findByText('176.4')).toBeInTheDocument();
+    expect(screen.getByText('(lb)')).toBeInTheDocument();
   });
 });

@@ -1,4 +1,4 @@
-import type { VitalType } from '../api/vitals';
+import type { TrendPoint, VitalType } from '../api/vitals';
 
 /** Everything is stored in metric units; these only change what the user sees and types. */
 export type UnitSystem = 'METRIC' | 'IMPERIAL';
@@ -68,6 +68,22 @@ export function vitalDecimals(type: VitalType, prefs: UnitPrefs): number {
     default:
       return 0;
   }
+}
+
+/** Trend points with every value in the user's units, ready for a chart. */
+export function trendToDisplay(type: VitalType, points: TrendPoint[], prefs: UnitPrefs): TrendPoint[] {
+  if (vitalToDisplay(type, 1, prefs) === 1) return points;
+  const c = (v: number) => vitalToDisplay(type, v, prefs);
+  return points.map((p) => ({ ...p, average: c(p.average), min: c(p.min), max: c(p.max) }));
+}
+
+export function bandToDisplay<T extends { low: number; high: number }>(
+  type: VitalType,
+  band: T | undefined,
+  prefs: UnitPrefs,
+): T | undefined {
+  if (!band) return band;
+  return { ...band, low: vitalToDisplay(type, band.low, prefs), high: vitalToDisplay(type, band.high, prefs) };
 }
 
 export const distanceUnit = (prefs: UnitPrefs) => (imperial(prefs) ? 'mi' : 'km');
