@@ -2,6 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { useState } from 'react';
 import { deleteActivity, listActivities, weeklyActivity, type Activity } from '../api/activities';
 import { listGoals } from '../api/goals';
+import { useUnitPrefs } from '../auth/AuthContext';
 import { ActivityForm } from '../components/ActivityForm';
 import { WeeklyActivityChart } from '../components/charts/WeeklyActivityChart';
 import { EmptyState } from '../components/EmptyState';
@@ -11,10 +12,12 @@ import { Modal } from '../components/Modal';
 import { PageHeader } from '../components/PageHeader';
 import { addDays, formatDateTime, today } from '../lib/dates';
 import { ACTIVITY_LABELS, formatMinutes, formatNumber } from '../lib/format';
+import { distanceToDisplay, distanceUnit } from '../lib/units';
 
 const PAGE_SIZE = 20;
 
 export function ActivityPage() {
+  const prefs = useUnitPrefs();
   const queryClient = useQueryClient();
   const [weeks, setWeeks] = useState(12);
   const [page, setPage] = useState(0);
@@ -78,7 +81,9 @@ export function ActivityPage() {
             </div>
             <div>
               <dt>Distance</dt>
-              <dd>{formatNumber(thisWeek.distanceKm, 1)} km</dd>
+              <dd>
+                {formatNumber(distanceToDisplay(thisWeek.distanceKm, prefs), 1)} {distanceUnit(prefs)}
+              </dd>
             </div>
             <div>
               <dt>Steps</dt>
@@ -118,7 +123,11 @@ export function ActivityPage() {
                       {a.notes && <div className="muted small">{a.notes}</div>}
                     </td>
                     <td className="num">{formatMinutes(a.durationMinutes)}</td>
-                    <td className="num">{a.distanceKm ? `${formatNumber(a.distanceKm, 1)} km` : '–'}</td>
+                    <td className="num">
+                      {a.distanceKm
+                        ? `${formatNumber(distanceToDisplay(a.distanceKm, prefs), 1)} ${distanceUnit(prefs)}`
+                        : '–'}
+                    </td>
                     <td className="num">{a.steps ? formatNumber(a.steps) : '–'}</td>
                     <td className="num">{a.caloriesKcal ?? '–'}</td>
                     <td className="row-actions">

@@ -7,8 +7,10 @@ import {
   type ActivityPayload,
   type ActivityType,
 } from '../api/activities';
+import { useUnitPrefs } from '../auth/AuthContext';
 import { fromLocalInputValue, toLocalInputValue } from '../lib/dates';
 import { ACTIVITY_LABELS } from '../lib/format';
+import { distanceFromDisplay, distanceToDisplay, distanceUnit } from '../lib/units';
 import { ErrorMessage } from './ErrorMessage';
 import { Field } from './Field';
 
@@ -20,12 +22,15 @@ function optionalNumber(value: string): number | null {
 
 export function ActivityForm({ activity, onDone }: { activity?: Activity; onDone: () => void }) {
   const queryClient = useQueryClient();
+  const prefs = useUnitPrefs();
   const [type, setType] = useState<ActivityType>(activity?.type ?? 'WALK');
   const [startedAt, setStartedAt] = useState(
     toLocalInputValue(activity ? new Date(activity.startedAt) : new Date()),
   );
   const [duration, setDuration] = useState(activity ? String(activity.durationMinutes) : '30');
-  const [distance, setDistance] = useState(activity?.distanceKm ? String(activity.distanceKm) : '');
+  const [distance, setDistance] = useState(
+    activity?.distanceKm ? String(Number(distanceToDisplay(activity.distanceKm, prefs).toFixed(2))) : '',
+  );
   const [steps, setSteps] = useState(activity?.steps ? String(activity.steps) : '');
   const [calories, setCalories] = useState(activity?.caloriesKcal ? String(activity.caloriesKcal) : '');
   const [notes, setNotes] = useState(activity?.notes ?? '');
@@ -40,13 +45,15 @@ export function ActivityForm({ activity, onDone }: { activity?: Activity; onDone
     },
   });
 
+  const toKm = (value: number | null) => (value === null ? null : distanceFromDisplay(value, prefs));
+
   function submit(e: FormEvent) {
     e.preventDefault();
     mutation.mutate({
       type,
       startedAt: fromLocalInputValue(startedAt),
       durationMinutes: Number(duration),
-      distanceKm: DISTANCE_TYPES.includes(type) ? optionalNumber(distance) : null,
+      distanceKm: DISTANCE_TYPES.includes(type) ? toKm(optionalNumber(distance)) : null,
       steps: optionalNumber(steps),
       caloriesKcal: optionalNumber(calories),
       notes: notes.trim() || null,
@@ -74,7 +81,7 @@ export function ActivityForm({ activity, onDone }: { activity?: Activity; onDone
           <input type="number" required min={1} max={1440} value={duration} onChange={(e) => setDuration(e.target.value)} />
         </Field>
         {DISTANCE_TYPES.includes(type) && (
-          <Field label="Distance (km)">
+          <Field label={`Distance (${distanceUnit(prefs)})`}>
             <input type="number" min={0} step="0.01" value={distance} onChange={(e) => setDistance(e.target.value)} />
           </Field>
         )}
