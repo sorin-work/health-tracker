@@ -1,7 +1,7 @@
 import type { ActivityType } from '../api/activities';
 import type { GoalType } from '../api/goals';
 import type { Flag, GlucoseContext, VitalReading, VitalType } from '../api/vitals';
-import { METRIC, vitalDecimals, vitalToDisplay, vitalUnit, type UnitPrefs } from './units';
+import { METRIC, vitalDecimals, vitalToDisplay, vitalUnit, waterToDisplay, waterUnit, type UnitPrefs } from './units';
 
 export interface VitalMeta {
   label: string;
@@ -67,6 +67,11 @@ export function formatReading(
   prefs: UnitPrefs = METRIC,
 ): string {
   return `${formatVitalValue(reading.type, reading.value, reading.secondaryValue, prefs)} ${vitalUnit(reading.type, prefs)}`;
+}
+
+/** `750 ml` or `25 fl oz`. */
+export function formatWater(ml: number, prefs: UnitPrefs = METRIC): string {
+  return `${formatNumber(waterToDisplay(ml, prefs))} ${waterUnit(prefs)}`;
 }
 
 /** 95 -> `1 h 35 min`, 40 -> `40 min` */

@@ -7,6 +7,8 @@ import { renderWithProviders } from '../test/utils';
 import { WaterCard } from './WaterCard';
 
 vi.mock('../api/water', () => ({ waterForDay: vi.fn(), addWater: vi.fn(), deleteWater: vi.fn() }));
+const prefs = vi.hoisted(() => ({ current: { unitSystem: 'METRIC', glucoseUnit: 'MG_DL' } }));
+vi.mock('../auth/AuthContext', () => ({ useUnitPrefs: () => prefs.current }));
 
 describe('WaterCard', () => {
   beforeEach(() => {
@@ -22,6 +24,7 @@ describe('WaterCard', () => {
       });
     vi.mocked(waterApi.addWater).mockReset().mockResolvedValue({} as WaterEntry);
     vi.mocked(waterApi.deleteWater).mockReset().mockResolvedValue(undefined);
+    prefs.current = { unitSystem: 'METRIC', glucoseUnit: 'MG_DL' };
   });
 
   it('shows the total against the target', async () => {
@@ -57,5 +60,15 @@ describe('WaterCard', () => {
 
     await waitFor(() => expect(waterApi.deleteWater).toHaveBeenCalled());
     expect(vi.mocked(waterApi.deleteWater).mock.calls[0][0]).toBe(2);
+  });
+
+  it('works in fluid ounces for imperial users', async () => {
+    prefs.current = { unitSystem: 'IMPERIAL', glucoseUnit: 'MG_DL' };
+    renderWithProviders(<WaterCard />);
+
+    expect(await screen.findByText('25 fl oz')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: '+ 8 fl oz' }));
+
+    await waitFor(() => expect(waterApi.addWater).toHaveBeenCalledWith(237));
   });
 });

@@ -2,15 +2,17 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { listGoals } from '../api/goals';
 import { waterDaily } from '../api/water';
+import { useUnitPrefs } from '../auth/AuthContext';
 import { WaterChart } from '../components/charts/WaterChart';
 import { DateRangePicker } from '../components/DateRangePicker';
 import { ErrorMessage } from '../components/ErrorMessage';
 import { PageHeader } from '../components/PageHeader';
 import { DEFAULT_WATER_TARGET_ML, WaterCard } from '../components/WaterCard';
 import { presetRange, type DateRange } from '../lib/dates';
-import { formatNumber } from '../lib/format';
+import { formatWater } from '../lib/format';
 
 export function WaterPage() {
+  const prefs = useUnitPrefs();
   const [range, setRange] = useState<DateRange>(presetRange('30d'));
   const goals = useQuery({ queryKey: ['goals', false], queryFn: () => listGoals(false) });
   const daily = useQuery({
@@ -39,7 +41,7 @@ export function WaterPage() {
           <dl className="stats-row">
             <div>
               <dt>Average on days logged</dt>
-              <dd>{average === undefined ? '–' : `${formatNumber(average)} ml`}</dd>
+              <dd>{average === undefined ? '–' : formatWater(average, prefs)}</dd>
             </div>
             <div>
               <dt>Days at target</dt>
@@ -56,7 +58,7 @@ export function WaterPage() {
           <DateRangePicker value={range} onChange={setRange} />
         </div>
         <ErrorMessage error={daily.error} />
-        {days.length > 0 && <WaterChart days={days} target={target} />}
+        {days.length > 0 && <WaterChart days={days} target={target} prefs={prefs} />}
       </section>
     </>
   );
