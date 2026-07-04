@@ -1,7 +1,17 @@
 import type { ActivityType } from '../api/activities';
 import type { GoalType } from '../api/goals';
 import type { Flag, GlucoseContext, VitalReading, VitalType } from '../api/vitals';
-import { METRIC, vitalDecimals, vitalToDisplay, vitalUnit, waterToDisplay, waterUnit, type UnitPrefs } from './units';
+import {
+  goalToDisplay,
+  goalUnit,
+  METRIC,
+  vitalDecimals,
+  vitalToDisplay,
+  vitalUnit,
+  waterToDisplay,
+  waterUnit,
+  type UnitPrefs,
+} from './units';
 
 export interface VitalMeta {
   label: string;
@@ -93,26 +103,38 @@ export const ACTIVITY_LABELS: Record<ActivityType, string> = {
   OTHER: 'Other',
 };
 
-export const GOAL_META: Record<GoalType, { label: string; unit: string; describe: (target: number) => string }> = {
-  WEIGHT: { label: 'Target weight', unit: 'kg', describe: (t) => `Reach ${formatNumber(t, 1)} kg` },
+export const GOAL_META: Record<
+  GoalType,
+  { label: string; unit: string; decimals: number; describe: (target: string, unit: string) => string }
+> = {
+  WEIGHT: { label: 'Target weight', unit: 'kg', decimals: 1, describe: (t, u) => `Reach ${t} ${u}` },
   DAILY_STEPS: {
     label: 'Daily steps',
     unit: 'steps',
-    describe: (t) => `Average ${formatNumber(t)} steps a day`,
+    decimals: 0,
+    describe: (t) => `Average ${t} steps a day`,
   },
   WEEKLY_ACTIVE_MINUTES: {
     label: 'Active minutes',
     unit: 'min',
-    describe: (t) => `${formatNumber(t)} active minutes a week`,
+    decimals: 0,
+    describe: (t) => `${t} active minutes a week`,
   },
   WEEKLY_WORKOUTS: {
     label: 'Workouts',
     unit: 'sessions',
-    describe: (t) => `${formatNumber(t)} workouts a week`,
+    decimals: 0,
+    describe: (t) => `${t} workouts a week`,
   },
-  SLEEP_HOURS: { label: 'Sleep', unit: 'h', describe: (t) => `Sleep ${formatNumber(t, 1)} h a night` },
-  DAILY_WATER: { label: 'Water', unit: 'ml', describe: (t) => `Drink ${formatNumber(t)} ml a day` },
+  SLEEP_HOURS: { label: 'Sleep', unit: 'h', decimals: 1, describe: (t) => `Sleep ${t} h a night` },
+  DAILY_WATER: { label: 'Water', unit: 'ml', decimals: 0, describe: (t, u) => `Drink ${t} ${u} a day` },
 };
+
+/** "Reach 176.4 lb", "Average 8,000 steps a day" in the user's units. */
+export function describeGoal(type: GoalType, target: number, prefs: UnitPrefs = METRIC): string {
+  const meta = GOAL_META[type];
+  return meta.describe(formatNumber(goalToDisplay(type, target, prefs), meta.decimals), goalUnit(type, meta.unit, prefs));
+}
 
 /** Progress bar colour for an adherence percentage: green from 90% up. */
 export function adherenceTone(percent: number | undefined): 'success' | 'warning' | 'default' {

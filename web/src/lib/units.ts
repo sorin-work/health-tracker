@@ -1,3 +1,4 @@
+import type { GoalType } from '../api/goals';
 import type { TrendPoint, VitalType } from '../api/vitals';
 
 /** Everything is stored in metric units; these only change what the user sees and types. */
@@ -95,6 +96,25 @@ export const waterUnit = (prefs: UnitPrefs) => (imperial(prefs) ? 'fl oz' : 'ml'
 export const waterToDisplay = (ml: number, prefs: UnitPrefs) => (imperial(prefs) ? mlToFlOz(ml) : ml);
 export const waterFromDisplay = (value: number, prefs: UnitPrefs) =>
   imperial(prefs) ? Math.round(flOzToMl(value)) : Math.round(value);
+
+/** Weight and water goals follow the unit preferences; the other goal types have no unit choice. */
+export function goalToDisplay(type: GoalType, value: number, prefs: UnitPrefs): number {
+  if (type === 'WEIGHT') return vitalToDisplay('WEIGHT', value, prefs);
+  if (type === 'DAILY_WATER') return waterToDisplay(value, prefs);
+  return value;
+}
+
+export function goalFromDisplay(type: GoalType, value: number, prefs: UnitPrefs): number {
+  if (type === 'WEIGHT') return vitalFromDisplay('WEIGHT', value, prefs);
+  if (type === 'DAILY_WATER') return waterFromDisplay(value, prefs);
+  return value;
+}
+
+export function goalUnit(type: GoalType, metricUnit: string, prefs: UnitPrefs): string {
+  if (type === 'WEIGHT') return vitalUnit('WEIGHT', prefs);
+  if (type === 'DAILY_WATER') return waterUnit(prefs);
+  return metricUnit;
+}
 
 function round(value: number, decimals: number): number {
   const f = 10 ** decimals;

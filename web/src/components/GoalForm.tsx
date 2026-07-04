@@ -1,8 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
 import { createGoal, updateGoal, type Goal, type GoalPayload, type GoalType } from '../api/goals';
+import { useUnitPrefs } from '../auth/AuthContext';
 import { addDays, today } from '../lib/dates';
 import { GOAL_META } from '../lib/format';
+import { goalFromDisplay, goalToDisplay, goalUnit, vitalUnit, type UnitPrefs } from '../lib/units';
 import { ErrorMessage } from './ErrorMessage';
 import { Field } from './Field';
 
@@ -15,11 +17,17 @@ const DEFAULT_TARGETS: Record<GoalType, string> = {
   DAILY_WATER: '2000',
 };
 
+/** A stored value as the user would type it, rounded so 80 kg shows as 176.4 lb, not 176.369809. */
+function shown(type: GoalType, value: number, prefs: UnitPrefs): string {
+  return String(Number(goalToDisplay(type, value, prefs).toFixed(1)));
+}
+
 export function GoalForm({ goal, onDone }: { goal?: Goal; onDone: () => void }) {
   const queryClient = useQueryClient();
+  const prefs = useUnitPrefs();
   const [type, setType] = useState<GoalType>(goal?.type ?? 'WEIGHT');
-  const [target, setTarget] = useState(goal ? String(goal.targetValue) : DEFAULT_TARGETS.WEIGHT);
-  const [start, setStart] = useState(goal?.startValue ? String(goal.startValue) : '');
+  const [target, setTarget] = useState(goal ? shown(goal.type, goal.targetValue, prefs) : DEFAULT_TARGETS.WEIGHT);
+  const [start, setStart] = useState(goal?.startValue ? shown('WEIGHT', goal.startValue, prefs) : '');
   const [targetDate, setTargetDate] = useState(goal?.targetDate ?? '');
   const [notes, setNotes] = useState(goal?.notes ?? '');
 
@@ -33,15 +41,16 @@ export function GoalForm({ goal, onDone }: { goal?: Goal; onDone: () => void }) 
 
   function changeType(next: GoalType) {
     setType(next);
-    setTarget(DEFAULT_TARGETS[next]);
+    const preset = DEFAULT_TARGETS[next];
+    setTarget(preset ? shown(next, Number(preset), prefs) : '');
   }
 
   function submit(e: FormEvent) {
     e.preventDefault();
     mutation.mutate({
       type,
-      targetValue: Number(target),
-      startValue: type === 'WEIGHT' && start ? Number(start) : null,
+      targetValue: goalFromDisplay(type, Number(target), prefs),
+      startValue: type === 'WEIGHT' && start ? goalFromDisplay('WEIGHT', Number(start), prefs) : null,
       targetDate: targetDate || null,
       notes: notes.trim() || null,
     });
@@ -60,11 +69,11 @@ export function GoalForm({ goal, onDone }: { goal?: Goal; onDone: () => void }) 
         </select>
       </Field>
       <div className="form__row">
-        <Field label={`Target (${meta.unit})`}>
+        <Field label={`Target (${goalUnit(type, meta.unit, prefs)})`}>
           <input type="number" required min={0} step="any" value={target} onChange={(e) => setTarget(e.target.value)} />
         </Field>
         {type === 'WEIGHT' && (
-          <Field label="Starting weight (kg)" hint="Defaults to your latest weight">
+          <Field label={`Starting weight (${vitalUnit('WEIGHT', prefs)})`} hint="Defaults to your latest weight">
             <input type="number" min={0} step="0.1" value={start} onChange={(e) => setStart(e.target.value)} />
           </Field>
         )}
