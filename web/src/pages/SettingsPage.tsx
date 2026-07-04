@@ -2,12 +2,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
 import { updateProfile } from '../api/auth';
 import { listRanges, resetRange, updateRange, type ReferenceRange } from '../api/ranges';
-import { ME_QUERY_KEY, useUser } from '../auth/AuthContext';
+import { ME_QUERY_KEY, useUnitPrefs, useUser } from '../auth/AuthContext';
 import { ErrorMessage } from '../components/ErrorMessage';
 import { Field } from '../components/Field';
 import { PageHeader } from '../components/PageHeader';
 import { formatNumber } from '../lib/format';
-import type { GlucoseUnit, UnitSystem } from '../lib/units';
+import { vitalFromDisplay, vitalToDisplay, vitalUnit, type GlucoseUnit, type UnitSystem } from '../lib/units';
 
 function timezones(): string[] {
   const intl = Intl as unknown as { supportedValuesOf?: (key: string) => string[] };
@@ -129,21 +129,33 @@ function RangesCard() {
   );
 }
 
+const isGlucose = (metric: ReferenceRange['metric']) => metric === 'GLUCOSE_FASTING' || metric === 'GLUCOSE_NON_FASTING';
+
 function RangeRow({ range }: { range: ReferenceRange }) {
   const queryClient = useQueryClient();
-  const [low, setLow] = useState(String(range.low));
-  const [high, setHigh] = useState(String(range.high));
+  const prefs = useUnitPrefs();
+  // Glucose ranges are stored in mg/dL; show and edit them in the unit the user picked.
+  const glucose = isGlucose(range.metric);
+  const show = (v: number) => (glucose ? Number(vitalToDisplay('BLOOD_GLUCOSE', v, prefs).toFixed(1)) : v);
+  const store = (v: number) => (glucose ? vitalFromDisplay('BLOOD_GLUCOSE', v, prefs) : v);
+  const unit = glucose ? vitalUnit('BLOOD_GLUCOSE', prefs) : range.unit;
+  const decimals = glucose && prefs.glucoseUnit === 'MMOL_L' ? 1 : 0;
+  const [low, setLow] = useState(String(show(range.low)));
+  const [high, setHigh] = useState(String(show(range.high)));
   const onSuccess = (updated: ReferenceRange | void) => {
     queryClient.invalidateQueries({ queryKey: ['ranges'] });
     queryClient.invalidateQueries({ queryKey: ['vitals'] });
     if (!updated) {
-      setLow(String(range.defaultLow));
-      setHigh(String(range.defaultHigh));
+      setLow(String(show(range.defaultLow)));
+      setHigh(String(show(range.defaultHigh)));
     }
   };
-  const save = useMutation({ mutationFn: () => updateRange(range.metric, Number(low), Number(high)), onSuccess });
+  const save = useMutation({
+    mutationFn: () => updateRange(range.metric, store(Number(low)), store(Number(high))),
+    onSuccess,
+  });
   const reset = useMutation({ mutationFn: () => resetRange(range.metric), onSuccess: () => onSuccess() });
-  const dirty = Number(low) !== range.low || Number(high) !== range.high;
+  const dirty = Number(low) !== show(range.low) || Number(high) !== show(range.high);
 
   return (
     <form
@@ -157,7 +169,7 @@ function RangeRow({ range }: { range: ReferenceRange }) {
         <strong>{range.label}</strong>
         <span className="muted small">
           {range.custom
-            ? `Custom (default ${formatNumber(range.defaultLow)}–${formatNumber(range.defaultHigh)})`
+            ? `Custom (default ${formatNumber(show(range.defaultLow), decimals)}–${formatNumber(show(range.defaultHigh), decimals)})`
             : 'Default'}
         </span>
       </div>
@@ -165,7 +177,7 @@ function RangeRow({ range }: { range: ReferenceRange }) {
         <input type="number" step="any" aria-label={`${range.label} low`} value={low} onChange={(e) => setLow(e.target.value)} />
         <span aria-hidden>–</span>
         <input type="number" step="any" aria-label={`${range.label} high`} value={high} onChange={(e) => setHigh(e.target.value)} />
-        <span className="muted small">{range.unit}</span>
+        <span className="muted small">{unit}</span>
       </div>
       <div className="range-row__actions">
         <button className="button button--small" type="submit" disabled={!dirty || save.isPending}>
