@@ -2,6 +2,8 @@ package com.healthtracker;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.healthtracker.journal.JournalEntry;
+import com.healthtracker.journal.JournalRepository;
 import com.healthtracker.medication.Medication;
 import com.healthtracker.medication.MedicationRepository;
 import com.healthtracker.mood.MoodEntry;
@@ -44,6 +46,7 @@ class RepositoryTest {
     @Autowired SymptomRepository symptoms;
     @Autowired MedicationRepository medications;
     @Autowired MoodRepository moods;
+    @Autowired JournalRepository journal;
     @Autowired WaterRepository water;
 
     Long userId;
@@ -154,5 +157,28 @@ class RepositoryTest {
                 userId, Instant.parse("2026-06-10T00:00:00Z"), Instant.parse("2026-06-11T00:00:00Z"));
 
         assertThat(day).extracting(WaterIntake::getAmountMl).containsExactly(250, 500);
+    }
+
+    private void note(Long user, String day, String title, String body) {
+        JournalEntry j = new JournalEntry(user, Instant.EPOCH);
+        j.setEntryDate(LocalDate.parse(day));
+        j.setTitle(title);
+        j.setBody(body);
+        journal.save(j);
+    }
+
+    @Test
+    void journalSearchMatchesTitleOrBodyIgnoringCase() {
+        note(userId, "2026-07-01", "Appointment", "Ask Dr. Weber about the dizziness");
+        note(userId, "2026-07-02", "Dizzy again", "Stood up too fast");
+        note(userId, "2026-07-03", null, "Good day, long walk");
+        note(otherUserId, "2026-07-02", null, "dizziness");
+        LocalDate from = LocalDate.of(2026, 7, 1);
+        LocalDate to = LocalDate.of(2026, 7, 31);
+
+        assertThat(journal.search(userId, from, to, "DIZZ")).extracting(JournalEntry::getEntryDate)
+                .containsExactly(LocalDate.of(2026, 7, 2), LocalDate.of(2026, 7, 1));
+        assertThat(journal.search(userId, from, to, null)).hasSize(3);
+        assertThat(journal.search(userId, from, LocalDate.of(2026, 7, 1), null)).hasSize(1);
     }
 }
