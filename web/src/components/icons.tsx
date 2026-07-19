@@ -117,3 +117,9 @@ export const DropIcon = (p: IconProps) => (
     <path d="M12 3s6 6.6 6 11a6 6 0 0 1-12 0c0-4.4 6-11 6-11z" />
   </Icon>
 );
+
+export const BookIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4 4.5A1.5 1.5 0 0 1 5.5 3H20v16H5.5A1.5 1.5 0 0 0 4 20.5zM4 20.5A1.5 1.5 0 0 0 5.5 22H20" />
+  </Icon>
+);

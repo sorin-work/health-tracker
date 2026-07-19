@@ -1186,6 +1186,41 @@ input[type='range'] {
   width: 5.5rem;
 }
 
+/* Journal */
+
+.search {
+  flex: 1;
+  max-width: 24rem;
+}
+
+.journal-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.journal-list li {
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.journal-list li:last-child {
+  border-bottom: 0;
+}
+
+.journal-list__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: baseline;
+}
+
+.journal-list__body {
+  margin: 0.35rem 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 /* Accessibility */
 
 .skip-link {

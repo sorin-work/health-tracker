@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation } from 'react-router';
 import { useAuth, useUser } from '../auth/AuthContext';
 import { Disclaimer } from './Disclaimer';
 import {
+  BookIcon,
   CloseIcon,
   DownloadIcon,
   DropIcon,
@@ -33,6 +34,7 @@ const NAV: NavItem[] = [
   { to: '/water', label: 'Water', icon: DropIcon },
   { to: '/activity', label: 'Activity', icon: RunIcon },
   { to: '/goals', label: 'Goals', icon: TargetIcon },
+  { to: '/journal', label: 'Journal', icon: BookIcon },
   { to: '/export', label: 'Export', icon: DownloadIcon },
   { to: '/settings', label: 'Settings', icon: SettingsIcon },
 ];

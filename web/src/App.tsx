@@ -5,6 +5,7 @@ import { ActivityPage } from './pages/ActivityPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { ExportPage } from './pages/ExportPage';
 import { GoalsPage } from './pages/GoalsPage';
+import { JournalPage } from './pages/JournalPage';
 import { LoginPage } from './pages/LoginPage';
 import { MedicationsPage } from './pages/MedicationsPage';
 import { MoodPage } from './pages/MoodPage';
@@ -31,6 +32,7 @@ export function App() {
           <Route path="/water" element={<WaterPage />} />
           <Route path="/activity" element={<ActivityPage />} />
           <Route path="/goals" element={<GoalsPage />} />
+          <Route path="/journal" element={<JournalPage />} />
           <Route path="/export" element={<ExportPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
