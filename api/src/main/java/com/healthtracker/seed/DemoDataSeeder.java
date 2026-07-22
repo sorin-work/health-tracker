@@ -90,6 +90,7 @@ public class DemoDataSeeder implements ApplicationRunner {
         int activities = seedActivities(userId, first, today, now, random);
         int moods = seedMood(userId, first, today, now, random);
         int glasses = seedWater(userId, first, today, now, random);
+        seedJournal(userId, first, today, now);
         seedGoals(userId, today, now);
 
         log.info("Seeded demo user {} with {} readings, {} dose logs, {} symptoms, {} activities, {} mood check-ins"
@@ -321,6 +322,32 @@ public class DemoDataSeeder implements ApplicationRunner {
         rows.removeIf(r -> ((OffsetDateTime) r[2]).toInstant().isAfter(now));
         jdbc.batchUpdate("insert into water_intake (user_id, amount_ml, logged_at, created_at) values (?, ?, ?, ?)", rows);
         return rows.size();
+    }
+
+    private void seedJournal(Long userId, LocalDate first, LocalDate today, Instant now) {
+        record Note(int day, String title, String body) {}
+        List<Note> notes = List.of(
+                new Note(2, "Starting out", "Doctor wants me to keep a log of blood pressure and weight for the next"
+                        + " few months. Morning readings before coffee."),
+                new Note(30, "Check-up", "BP still around 140/90. Starting lisinopril 10 mg next week."
+                        + "\nQuestions: does it interact with metformin? Best time of day?"),
+                new Note(38, null, "First days on lisinopril. A bit dizzy when standing up quickly, otherwise fine."),
+                new Note(44, "Holidays", "Too much food at my parents'. Will get back to the walks next week."),
+                new Note(70, null, "Dizziness is gone. BP readings are clearly lower already."),
+                new Note(120, "Running", "Did my first 20 minute run without stopping."),
+                new Note(165, "Statin", "Cholesterol came back high. Starting atorvastatin 20 mg in the evening."),
+                new Note(200, null, "Headaches more often this month. Could be the screen time at work."),
+                new Note(245, "Vitamin D", "Stopping vitamin D for the summer, levels were fine."),
+                new Note(300, "Parkrun", "First parkrun! 31 minutes."),
+                new Note(350, "Next appointment", "Bring the export. Ask whether the metformin dose can go down."));
+        String sql = "insert into journal_entries (user_id, entry_date, title, body, created_at, updated_at)"
+                + " values (?, ?, ?, ?, ?, ?)";
+        for (Note note : notes) {
+            LocalDate day = first.plusDays(note.day());
+            if (!day.isAfter(today)) {
+                jdbc.update(sql, userId, day, note.title(), note.body(), odt(now), odt(now));
+            }
+        }
     }
 
     private void seedGoals(Long userId, LocalDate today, Instant now) {
