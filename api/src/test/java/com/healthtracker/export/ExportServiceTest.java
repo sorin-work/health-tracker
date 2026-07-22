@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import com.healthtracker.activity.ActivityService;
+import com.healthtracker.journal.JournalService;
+import com.healthtracker.journal.dto.JournalResponse;
 import com.healthtracker.medication.DoseService;
 import com.healthtracker.medication.DoseStatus;
 import com.healthtracker.medication.MedicationService;
@@ -47,6 +49,7 @@ class ExportServiceTest {
     @Mock ActivityService activityService;
     @Mock MoodService moodService;
     @Mock WaterService waterService;
+    @Mock JournalService journalService;
     @Mock UserService userService;
 
     ExportService service;
@@ -54,7 +57,7 @@ class ExportServiceTest {
     @BeforeEach
     void setUp() {
         service = new ExportService(vitalService, medicationService, doseService, symptomService, activityService,
-                moodService, waterService, userService, Clock.fixed(Instant.parse("2026-03-01T12:00:00Z"), BERLIN));
+                moodService, waterService, journalService, userService, Clock.fixed(Instant.parse("2026-03-01T12:00:00Z"), BERLIN));
         when(userService.zoneOf(1L)).thenReturn(BERLIN);
     }
 
@@ -136,5 +139,16 @@ class ExportServiceTest {
         String csv = service.export(1L, ExportDataset.WATER, FROM, TO).content();
 
         assertThat(csv.split("\r\n")).containsExactly("logged_at,amount_ml", "2026-02-02 08:00,250");
+    }
+
+    @Test
+    void journalKeepsLineBreaksInsideQuotes() {
+        Instant at = Instant.parse("2026-02-02T20:00:00Z");
+        when(journalService.entries(1L, FROM, TO, null)).thenReturn(List.of(
+                new JournalResponse(1L, LocalDate.of(2026, 2, 2), "Visit", "Bring the log\nAsk about BP", at, at)));
+
+        String csv = service.export(1L, ExportDataset.JOURNAL, FROM, TO).content();
+
+        assertThat(csv).isEqualTo("date,title,note\r\n2026-02-02,Visit,\"Bring the log\nAsk about BP\"\r\n");
     }
 }

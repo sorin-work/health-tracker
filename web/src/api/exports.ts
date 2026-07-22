@@ -1,6 +1,6 @@
 import { api, toQuery } from './client';
 
-export type ExportDataset = 'vitals' | 'medications' | 'doses' | 'symptoms' | 'activities' | 'mood' | 'water';
+export type ExportDataset = 'vitals' | 'medications' | 'doses' | 'symptoms' | 'activities' | 'mood' | 'water' | 'journal';
 
 /** Downloads a CSV export and hands it to the browser as a file. */
 export async function downloadExport(dataset: ExportDataset, from?: string, to?: string): Promise<string> {

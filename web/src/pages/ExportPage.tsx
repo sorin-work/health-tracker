@@ -24,6 +24,7 @@ const DATASETS: { key: ExportDataset; title: string; description: string; ranged
   { key: 'activities', title: 'Activity', description: 'Workouts with duration, distance and steps.', ranged: true },
   { key: 'mood', title: 'Mood', description: 'Mood and energy check-ins with notes.', ranged: true },
   { key: 'water', title: 'Water', description: 'Every glass with the time it was logged.', ranged: true },
+  { key: 'journal', title: 'Journal', description: 'Your notes, one row per entry.', ranged: true },
 ];
 
 export function ExportPage() {

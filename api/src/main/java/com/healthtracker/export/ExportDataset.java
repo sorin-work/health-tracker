@@ -9,7 +9,8 @@ public enum ExportDataset {
     SYMPTOMS,
     ACTIVITIES,
     MOOD,
-    WATER;
+    WATER,
+    JOURNAL;
 
     public String fileStem() {
         return name().toLowerCase(Locale.ROOT);

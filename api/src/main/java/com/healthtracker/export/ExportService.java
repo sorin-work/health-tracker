@@ -2,6 +2,7 @@ package com.healthtracker.export;
 
 import com.healthtracker.activity.ActivityService;
 import com.healthtracker.common.CsvWriter;
+import com.healthtracker.journal.JournalService;
 import com.healthtracker.medication.DoseService;
 import com.healthtracker.medication.MedicationService;
 import com.healthtracker.medication.dto.DoseResponse;
@@ -33,6 +34,7 @@ public class ExportService {
     private final ActivityService activityService;
     private final MoodService moodService;
     private final WaterService waterService;
+    private final JournalService journalService;
     private final UserService userService;
     private final Clock clock;
 
@@ -44,6 +46,7 @@ public class ExportService {
             ActivityService activityService,
             MoodService moodService,
             WaterService waterService,
+            JournalService journalService,
             UserService userService,
             Clock clock) {
         this.vitalService = vitalService;
@@ -53,6 +56,7 @@ public class ExportService {
         this.activityService = activityService;
         this.moodService = moodService;
         this.waterService = waterService;
+        this.journalService = journalService;
         this.userService = userService;
         this.clock = clock;
     }
@@ -72,6 +76,7 @@ public class ExportService {
             case ACTIVITIES -> activities(userId, start, end, zone);
             case MOOD -> mood(userId, start, end, zone);
             case WATER -> water(userId, start, end, zone);
+            case JOURNAL -> journal(userId, start, end);
         };
         String filename = dataset == ExportDataset.MEDICATIONS
                 ? "health-tracker-medications.csv"
@@ -153,6 +158,13 @@ public class ExportService {
     private String water(Long userId, LocalDate from, LocalDate to, ZoneId zone) {
         CsvWriter csv = new CsvWriter().row("logged_at", "amount_ml");
         waterService.entries(userId, from, to).forEach(w -> csv.row(local(w.loggedAt(), zone), w.amountMl()));
+        return csv.toString();
+    }
+
+    private String journal(Long userId, LocalDate from, LocalDate to) {
+        CsvWriter csv = new CsvWriter().row("date", "title", "note");
+        journalService.entries(userId, from, to, null).reversed()
+                .forEach(j -> csv.row(j.entryDate(), j.title(), j.body()));
         return csv.toString();
     }
 
