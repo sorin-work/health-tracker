@@ -12,6 +12,8 @@ import com.healthtracker.support.TestAuth;
 import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -61,5 +63,14 @@ class ExportControllerTest {
     @Test
     void exportNeedsAuthentication() throws Exception {
         mvc.perform(get("/api/export/vitals.csv")).andExpect(status().isUnauthorized());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"mood.csv,MOOD", "water.csv,WATER", "journal.csv,JOURNAL", "Doses.csv,DOSES"})
+    void everyDatasetHasAUrl(String path, ExportDataset dataset) throws Exception {
+        when(exportService.export(1L, dataset, null, null))
+                .thenReturn(new ExportService.Export("health-tracker-export.csv", "a\r\n"));
+
+        mvc.perform(get("/api/export/" + path).with(TestAuth.signedIn())).andExpect(status().isOk());
     }
 }
