@@ -1,6 +1,8 @@
 package com.healthtracker.medication.dto;
 
 import com.healthtracker.medication.Medication;
+import com.healthtracker.medication.ScheduleType;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -14,7 +16,25 @@ public record MedicationResponse(
         List<LocalTime> times,
         LocalDate startDate,
         LocalDate endDate,
-        boolean active) {
+        boolean active,
+        ScheduleType scheduleType,
+        Integer intervalDays,
+        List<DayOfWeek> daysOfWeek) {
+
+    /** A daily medication, as the API described them before schedules existed. */
+    public MedicationResponse(
+            Long id,
+            String name,
+            String dosage,
+            String instructions,
+            boolean asNeeded,
+            List<LocalTime> times,
+            LocalDate startDate,
+            LocalDate endDate,
+            boolean active) {
+        this(id, name, dosage, instructions, asNeeded, times, startDate, endDate, active,
+                ScheduleType.DAILY, null, List.of());
+    }
 
     public static MedicationResponse from(Medication m) {
         return new MedicationResponse(
@@ -26,6 +46,9 @@ public record MedicationResponse(
                 List.copyOf(m.getTimes()),
                 m.getStartDate(),
                 m.getEndDate(),
-                m.isActive());
+                m.isActive(),
+                m.getScheduleType(),
+                m.getIntervalDays(),
+                m.getDaysOfWeek().stream().sorted().toList());
     }
 }

@@ -82,6 +82,15 @@ public class MedicationService {
         if (request.endDate() != null && request.endDate().isBefore(request.startDate())) {
             throw ApiException.badRequest("End date must not be before the start date");
         }
+        ScheduleType schedule = request.asNeeded() || request.scheduleType() == null
+                ? ScheduleType.DAILY
+                : request.scheduleType();
+        if (schedule == ScheduleType.EVERY_N_DAYS && request.intervalDays() == null) {
+            throw ApiException.badRequest("Say how many days apart the doses are");
+        }
+        if (schedule == ScheduleType.WEEKLY && (request.daysOfWeek() == null || request.daysOfWeek().isEmpty())) {
+            throw ApiException.badRequest("Pick at least one day of the week");
+        }
         medication.setName(request.name().trim());
         medication.setDosage(trimToNull(request.dosage()));
         medication.setInstructions(trimToNull(request.instructions()));
@@ -89,6 +98,9 @@ public class MedicationService {
         medication.setTimes(request.asNeeded() ? List.of() : times);
         medication.setStartDate(request.startDate());
         medication.setEndDate(request.endDate());
+        medication.setScheduleType(schedule);
+        medication.setIntervalDays(schedule == ScheduleType.EVERY_N_DAYS ? request.intervalDays() : null);
+        medication.setDaysOfWeek(schedule == ScheduleType.WEEKLY ? request.daysOfWeek() : null);
     }
 
     private static String trimToNull(String s) {

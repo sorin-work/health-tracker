@@ -11,12 +11,15 @@ import com.healthtracker.medication.dto.MedicationRequest;
 import com.healthtracker.medication.dto.MedicationResponse;
 import com.healthtracker.user.UserService;
 import java.time.Clock;
+import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -100,5 +103,45 @@ class MedicationServiceTest {
         when(userService.zoneOf(1L)).thenReturn(ZoneOffset.UTC);
 
         assertThat(service.archive(1L, 1L).endDate()).isEqualTo(TODAY.minusDays(30));
+    }
+
+    private static MedicationRequest withSchedule(ScheduleType type, Integer interval, Set<DayOfWeek> days) {
+        return new MedicationRequest("Vitamin D3", "20 000 IU", null, false, List.of(LocalTime.of(9, 0)), TODAY, null,
+                type, interval, days);
+    }
+
+    @Test
+    void storesAWeeklySchedule() {
+        when(repository.save(any(Medication.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        MedicationResponse response = service.create(1L,
+                withSchedule(ScheduleType.WEEKLY, 5, EnumSet.of(DayOfWeek.SUNDAY, DayOfWeek.WEDNESDAY)));
+
+        assertThat(response.scheduleType()).isEqualTo(ScheduleType.WEEKLY);
+        assertThat(response.daysOfWeek()).containsExactly(DayOfWeek.WEDNESDAY, DayOfWeek.SUNDAY);
+        assertThat(response.intervalDays()).isNull();
+    }
+
+    @Test
+    void weeklyNeedsADay() {
+        assertThatThrownBy(() -> service.create(1L, withSchedule(ScheduleType.WEEKLY, null, Set.of())))
+                .hasMessageContaining("day of the week");
+    }
+
+    @Test
+    void everyNDaysNeedsAnInterval() {
+        assertThatThrownBy(() -> service.create(1L, withSchedule(ScheduleType.EVERY_N_DAYS, null, null)))
+                .hasMessageContaining("days apart");
+    }
+
+    @Test
+    void missingScheduleTypeMeansDaily() {
+        when(repository.save(any(Medication.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        MedicationResponse response = service.create(1L, withSchedule(null, 3, EnumSet.of(DayOfWeek.MONDAY)));
+
+        assertThat(response.scheduleType()).isEqualTo(ScheduleType.DAILY);
+        assertThat(response.intervalDays()).isNull();
+        assertThat(response.daysOfWeek()).isEmpty();
     }
 }
