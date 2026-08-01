@@ -19,6 +19,7 @@ import com.healthtracker.medication.dto.MedicationResponse;
 import com.healthtracker.medication.dto.RecordDoseRequest;
 import com.healthtracker.security.JwtService;
 import com.healthtracker.support.TestAuth;
+import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -73,6 +74,42 @@ class MedicationControllerTest {
         verify(medicationService).create(eq(1L), captor.capture());
         assertThat(captor.getValue().times()).containsExactly(LocalTime.of(8, 0), LocalTime.of(20, 0));
         assertThat(captor.getValue().asNeeded()).isFalse();
+    }
+
+    @Test
+    void createParsesAWeeklySchedule() throws Exception {
+        when(medicationService.create(eq(1L), any())).thenReturn(new MedicationResponse(
+                4L, "Vitamin D3", "20 000 IU", null, false, List.of(LocalTime.of(9, 0)), LocalDate.of(2026, 1, 1), null,
+                true, ScheduleType.WEEKLY, null, List.of(DayOfWeek.SUNDAY)));
+
+        mvc.perform(post("/api/medications")
+                        .with(TestAuth.signedIn())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"Vitamin D3","times":["09:00"],"startDate":"2026-01-01",
+                                 "scheduleType":"WEEKLY","daysOfWeek":["SUNDAY"]}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.scheduleType").value("WEEKLY"))
+                .andExpect(jsonPath("$.daysOfWeek[0]").value("SUNDAY"));
+
+        ArgumentCaptor<MedicationRequest> captor = ArgumentCaptor.forClass(MedicationRequest.class);
+        verify(medicationService).create(eq(1L), captor.capture());
+        assertThat(captor.getValue().scheduleType()).isEqualTo(ScheduleType.WEEKLY);
+        assertThat(captor.getValue().daysOfWeek()).containsExactly(DayOfWeek.SUNDAY);
+    }
+
+    @Test
+    void intervalMustBeAtLeastTwoDays() throws Exception {
+        mvc.perform(post("/api/medications")
+                        .with(TestAuth.signedIn())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"Prednisolone","times":["08:00"],"startDate":"2026-01-01",
+                                 "scheduleType":"EVERY_N_DAYS","intervalDays":1}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fields.intervalDays").exists());
     }
 
     @Test
