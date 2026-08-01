@@ -5,9 +5,11 @@ import static com.healthtracker.medication.MedicationFixtures.log;
 import static com.healthtracker.medication.MedicationFixtures.scheduled;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.EnumSet;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -42,6 +44,47 @@ class DoseScheduleTest {
         assertThat(DoseSchedule.slotsOn(m, JAN_10, BERLIN)).hasSize(1);
         assertThat(DoseSchedule.slotsOn(m, JAN_10.plusDays(6), BERLIN)).hasSize(1);
         assertThat(DoseSchedule.slotsOn(m, JAN_10.plusDays(7), BERLIN)).isEmpty();
+    }
+
+    @Test
+    void everyOtherDayCountsFromTheStartDate() {
+        Medication m = scheduled(1, "Prednisolone", JAN_10, null, "08:00");
+        m.setScheduleType(ScheduleType.EVERY_N_DAYS);
+        m.setIntervalDays(2);
+
+        assertThat(DoseSchedule.slotsOn(m, JAN_10, BERLIN)).hasSize(1);
+        assertThat(DoseSchedule.slotsOn(m, JAN_10.plusDays(1), BERLIN)).isEmpty();
+        assertThat(DoseSchedule.slotsOn(m, JAN_10.plusDays(2), BERLIN)).hasSize(1);
+        assertThat(DoseSchedule.slotsOn(m, JAN_10.plusDays(30), BERLIN)).hasSize(1);
+        assertThat(DoseSchedule.slotsOn(m, JAN_10.minusDays(2), BERLIN)).isEmpty();
+    }
+
+    @Test
+    void weeklyOnlyOnTheChosenDays() {
+        // 2026-01-10 is a Saturday.
+        Medication m = scheduled(1, "Methotrexate", JAN_10, null, "09:00");
+        m.setScheduleType(ScheduleType.WEEKLY);
+        m.setDaysOfWeek(EnumSet.of(DayOfWeek.MONDAY, DayOfWeek.THURSDAY));
+
+        assertThat(DoseSchedule.slotsOn(m, JAN_10, BERLIN)).isEmpty();
+        assertThat(DoseSchedule.slotsOn(m, LocalDate.of(2026, 1, 12), BERLIN))
+                .containsExactly(Instant.parse("2026-01-12T08:00:00Z"));
+        assertThat(DoseSchedule.slotsOn(m, LocalDate.of(2026, 1, 15), BERLIN)).hasSize(1);
+        assertThat(DoseSchedule.slotsOn(m, LocalDate.of(2026, 1, 16), BERLIN)).isEmpty();
+    }
+
+    @Test
+    void missedDosesOnlyCountOnScheduledDays() {
+        Medication m = scheduled(1, "Prednisolone", JAN_10, null, "08:00");
+        m.setScheduleType(ScheduleType.EVERY_N_DAYS);
+        m.setIntervalDays(3);
+
+        List<ScheduledDose> doses = DoseSchedule.expand(List.of(m), List.of(), JAN_10, JAN_10.plusDays(8), BERLIN,
+                JAN_10.plusDays(20));
+
+        assertThat(doses).extracting(ScheduledDose::day)
+                .containsExactly(JAN_10, JAN_10.plusDays(3), JAN_10.plusDays(6));
+        assertThat(doses).allSatisfy(d -> assertThat(d.status()).isEqualTo(DoseStatus.MISSED));
     }
 
     @Test
