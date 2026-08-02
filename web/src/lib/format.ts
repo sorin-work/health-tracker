@@ -1,5 +1,6 @@
 import type { ActivityType } from '../api/activities';
 import type { GoalType } from '../api/goals';
+import type { DayOfWeek, Medication } from '../api/medications';
 import type { Flag, GlucoseContext, VitalReading, VitalType } from '../api/vitals';
 import {
   goalToDisplay,
@@ -134,6 +135,34 @@ export const GOAL_META: Record<
 export function describeGoal(type: GoalType, target: number, prefs: UnitPrefs = METRIC): string {
   const meta = GOAL_META[type];
   return meta.describe(formatNumber(goalToDisplay(type, target, prefs), meta.decimals), goalUnit(type, meta.unit, prefs));
+}
+
+export const WEEKDAYS: { key: DayOfWeek; short: string }[] = [
+  { key: 'MONDAY', short: 'Mon' },
+  { key: 'TUESDAY', short: 'Tue' },
+  { key: 'WEDNESDAY', short: 'Wed' },
+  { key: 'THURSDAY', short: 'Thu' },
+  { key: 'FRIDAY', short: 'Fri' },
+  { key: 'SATURDAY', short: 'Sat' },
+  { key: 'SUNDAY', short: 'Sun' },
+];
+
+/** "08:00, 20:00", "Every 2 days at 08:00", "Mon, Thu at 09:00" or "As needed". */
+export function describeSchedule(
+  m: Pick<Medication, 'asNeeded' | 'times' | 'scheduleType' | 'intervalDays' | 'daysOfWeek'>,
+): string {
+  if (m.asNeeded) return 'As needed';
+  const times = m.times.map((t) => t.slice(0, 5)).join(', ');
+  switch (m.scheduleType) {
+    case 'EVERY_N_DAYS':
+      return m.intervalDays === 2 ? `Every other day at ${times}` : `Every ${m.intervalDays} days at ${times}`;
+    case 'WEEKLY': {
+      const days = WEEKDAYS.filter((d) => m.daysOfWeek?.includes(d.key)).map((d) => d.short);
+      return days.length === 7 ? times : `${days.join(', ')} at ${times}`;
+    }
+    default:
+      return times;
+  }
 }
 
 /** Progress bar colour for an adherence percentage: green from 90% up. */

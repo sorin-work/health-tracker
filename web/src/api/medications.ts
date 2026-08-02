@@ -1,6 +1,8 @@
 import { api, toQuery } from './client';
 
 export type DoseStatus = 'TAKEN' | 'SKIPPED' | 'MISSED' | 'PENDING';
+export type ScheduleType = 'DAILY' | 'EVERY_N_DAYS' | 'WEEKLY';
+export type DayOfWeek = 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY';
 
 export interface Medication {
   id: number;
@@ -13,6 +15,11 @@ export interface Medication {
   startDate: string;
   endDate?: string;
   active: boolean;
+  scheduleType: ScheduleType;
+  /** For EVERY_N_DAYS: 2 = every other day, counted from the start date. */
+  intervalDays?: number;
+  /** For WEEKLY. */
+  daysOfWeek: DayOfWeek[];
 }
 
 export interface MedicationPayload {
@@ -23,6 +30,10 @@ export interface MedicationPayload {
   times: string[];
   startDate: string;
   endDate?: string | null;
+  /** Defaults to DAILY. */
+  scheduleType?: ScheduleType;
+  intervalDays?: number | null;
+  daysOfWeek?: DayOfWeek[] | null;
 }
 
 export interface Dose {

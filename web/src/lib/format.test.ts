@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { formatMinutes, formatNumber, formatReading, formatVitalValue, isOutOfRange, severityLabel } from './format';
+import {
+  describeSchedule,
+  formatMinutes,
+  formatNumber,
+  formatReading,
+  formatVitalValue,
+  isOutOfRange,
+  severityLabel,
+} from './format';
 
 describe('format', () => {
   it('formats blood pressure as systolic/diastolic', () => {
@@ -44,5 +52,21 @@ describe('format', () => {
     expect(formatReading({ type: 'WEIGHT', value: 80 }, imperial)).toBe('176.4 lb');
     expect(formatReading({ type: 'BLOOD_GLUCOSE', value: 108 }, imperial)).toBe('6.0 mmol/L');
     expect(formatReading({ type: 'BLOOD_PRESSURE', value: 128, secondaryValue: 82 }, imperial)).toBe('128/82 mmHg');
+  });
+
+  it('describes medication schedules', () => {
+    const base = { asNeeded: false, times: ['08:00:00', '20:00:00'], daysOfWeek: [] };
+
+    expect(describeSchedule({ ...base, scheduleType: 'DAILY' })).toBe('08:00, 20:00');
+    expect(describeSchedule({ ...base, scheduleType: 'EVERY_N_DAYS', intervalDays: 2 })).toBe(
+      'Every other day at 08:00, 20:00',
+    );
+    expect(describeSchedule({ ...base, scheduleType: 'EVERY_N_DAYS', intervalDays: 3 })).toBe(
+      'Every 3 days at 08:00, 20:00',
+    );
+    expect(
+      describeSchedule({ ...base, times: ['09:00'], scheduleType: 'WEEKLY', daysOfWeek: ['THURSDAY', 'MONDAY'] }),
+    ).toBe('Mon, Thu at 09:00');
+    expect(describeSchedule({ ...base, asNeeded: true, times: [], scheduleType: 'DAILY' })).toBe('As needed');
   });
 });

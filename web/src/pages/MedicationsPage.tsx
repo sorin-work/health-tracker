@@ -19,8 +19,8 @@ import { MedicationForm } from '../components/MedicationForm';
 import { Modal } from '../components/Modal';
 import { PageHeader } from '../components/PageHeader';
 import { ProgressBar } from '../components/ProgressBar';
-import { addDays, formatDate, presetRange, shortTime, today, type DateRange } from '../lib/dates';
-import { adherenceTone } from '../lib/format';
+import { addDays, formatDate, presetRange, today, type DateRange } from '../lib/dates';
+import { adherenceTone, describeSchedule } from '../lib/format';
 
 export function MedicationsPage() {
   const queryClient = useQueryClient();
@@ -100,7 +100,7 @@ export function MedicationsPage() {
                 <div>
                   <strong>{m.name}</strong> {m.dosage && <span className="muted">{m.dosage}</span>}
                   <div className="muted small">
-                    {m.asNeeded ? 'As needed' : m.times.map(shortTime).join(', ')}
+                    {describeSchedule(m)}
                     {' · since '}
                     {formatDate(m.startDate)}
                     {m.endDate && ` until ${formatDate(m.endDate)}`}
