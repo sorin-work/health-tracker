@@ -5,6 +5,7 @@ import com.healthtracker.common.CsvWriter;
 import com.healthtracker.journal.JournalService;
 import com.healthtracker.medication.DoseService;
 import com.healthtracker.medication.MedicationService;
+import com.healthtracker.medication.ScheduleType;
 import com.healthtracker.medication.dto.DoseResponse;
 import com.healthtracker.medication.dto.MedicationResponse;
 import com.healthtracker.mood.MoodService;
@@ -17,6 +18,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.format.TextStyle;
+import java.util.Locale;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -103,12 +106,24 @@ public class ExportService {
         CsvWriter csv = new CsvWriter()
                 .row("name", "dosage", "schedule", "start_date", "end_date", "active", "instructions");
         for (MedicationResponse m : medicationService.list(userId, true)) {
-            String schedule = m.asNeeded()
-                    ? "as needed"
-                    : m.times().stream().map(String::valueOf).collect(Collectors.joining(" "));
+            String schedule = m.asNeeded() ? "as needed" : schedule(m);
             csv.row(m.name(), m.dosage(), schedule, m.startDate(), m.endDate(), m.active(), m.instructions());
         }
         return csv.toString();
+    }
+
+    /** {@code 08:00 20:00} for daily medications, {@code every 2 days at 08:00}, {@code Mon Thu at 09:00}. */
+    static String schedule(MedicationResponse m) {
+        String times = m.times().stream().map(String::valueOf).collect(Collectors.joining(" "));
+        if (m.scheduleType() == null || m.scheduleType() == ScheduleType.DAILY) {
+            return times;
+        }
+        String days = m.scheduleType() == ScheduleType.EVERY_N_DAYS
+                ? "every " + m.intervalDays() + " days"
+                : m.daysOfWeek().stream()
+                        .map(d -> d.getDisplayName(TextStyle.SHORT, Locale.ENGLISH))
+                        .collect(Collectors.joining(" "));
+        return days + " at " + times;
     }
 
     private String doses(Long userId, LocalDate from, LocalDate to, ZoneId zone) {
