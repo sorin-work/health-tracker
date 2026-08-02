@@ -1,11 +1,25 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
 import { ApiError } from '../api/client';
-import { createMedication, updateMedication, type Medication, type MedicationPayload } from '../api/medications';
-import { shortTime, today } from '../lib/dates';
+import {
+  createMedication,
+  updateMedication,
+  type DayOfWeek,
+  type Medication,
+  type MedicationPayload,
+  type ScheduleType,
+} from '../api/medications';
+import { parseISODate, shortTime, today } from '../lib/dates';
+import { WEEKDAYS } from '../lib/format';
 import { ErrorMessage } from './ErrorMessage';
 import { Field } from './Field';
 import { CloseIcon, PlusIcon } from './icons';
+
+const JS_DAYS: DayOfWeek[] = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+
+function weekdayOf(iso: string): DayOfWeek {
+  return JS_DAYS[parseISODate(iso).getDay()];
+}
 
 export function MedicationForm({ medication, onDone }: { medication?: Medication; onDone: () => void }) {
   const queryClient = useQueryClient();
@@ -17,6 +31,11 @@ export function MedicationForm({ medication, onDone }: { medication?: Medication
     medication && medication.times.length > 0 ? medication.times.map(shortTime) : ['08:00'],
   );
   const [startDate, setStartDate] = useState(medication?.startDate ?? today());
+  const [scheduleType, setScheduleType] = useState<ScheduleType>(medication?.scheduleType ?? 'DAILY');
+  const [intervalDays, setIntervalDays] = useState(String(medication?.intervalDays ?? 2));
+  const [daysOfWeek, setDaysOfWeek] = useState<DayOfWeek[]>(
+    medication?.daysOfWeek?.length ? medication.daysOfWeek : [weekdayOf(medication?.startDate ?? today())],
+  );
   const [endDate, setEndDate] = useState(medication?.endDate ?? '');
 
   const mutation = useMutation({
@@ -40,7 +59,14 @@ export function MedicationForm({ medication, onDone }: { medication?: Medication
       times: asNeeded ? [] : times.filter(Boolean),
       startDate,
       endDate: endDate || null,
+      scheduleType: asNeeded ? 'DAILY' : scheduleType,
+      intervalDays: !asNeeded && scheduleType === 'EVERY_N_DAYS' ? Number(intervalDays) : null,
+      daysOfWeek: !asNeeded && scheduleType === 'WEEKLY' ? daysOfWeek : null,
     });
+  }
+
+  function toggleDay(day: DayOfWeek) {
+    setDaysOfWeek(daysOfWeek.includes(day) ? daysOfWeek.filter((d) => d !== day) : [...daysOfWeek, day]);
   }
 
   return (
@@ -58,6 +84,50 @@ export function MedicationForm({ medication, onDone }: { medication?: Medication
         <input type="checkbox" checked={asNeeded} onChange={(e) => setAsNeeded(e.target.checked)} />
         Take only when needed (no schedule)
       </label>
+
+      {!asNeeded && (
+        <fieldset className="schedule">
+          <legend>How often</legend>
+          <div className="schedule__row">
+            <select aria-label="How often" value={scheduleType} onChange={(e) => setScheduleType(e.target.value as ScheduleType)}>
+              <option value="DAILY">Every day</option>
+              <option value="EVERY_N_DAYS">Every few days</option>
+              <option value="WEEKLY">On certain days of the week</option>
+            </select>
+            {scheduleType === 'EVERY_N_DAYS' && (
+              <label className="schedule__interval">
+                every
+                <input
+                  type="number"
+                  required
+                  min={2}
+                  max={90}
+                  aria-label="Days between doses"
+                  value={intervalDays}
+                  onChange={(e) => setIntervalDays(e.target.value)}
+                />
+                days, from the start date
+              </label>
+            )}
+          </div>
+          {scheduleType === 'WEEKLY' && (
+            <div className="weekdays" role="group" aria-label="Days of the week">
+              {WEEKDAYS.map((d) => (
+                <button
+                  key={d.key}
+                  type="button"
+                  className="weekdays__day"
+                  aria-pressed={daysOfWeek.includes(d.key)}
+                  onClick={() => toggleDay(d.key)}
+                >
+                  {d.short}
+                </button>
+              ))}
+            </div>
+          )}
+          {fields.daysOfWeek && <span className="field__error">{fields.daysOfWeek}</span>}
+        </fieldset>
+      )}
 
       {!asNeeded && (
         <fieldset className="times">
@@ -110,7 +180,11 @@ export function MedicationForm({ medication, onDone }: { medication?: Medication
         <button type="button" className="button button--ghost" onClick={onDone}>
           Cancel
         </button>
-        <button type="submit" className="button" disabled={mutation.isPending}>
+        <button
+          type="submit"
+          className="button"
+          disabled={mutation.isPending || (!asNeeded && scheduleType === 'WEEKLY' && daysOfWeek.length === 0)}
+        >
           {mutation.isPending ? 'Saving…' : medication ? 'Save changes' : 'Add medication'}
         </button>
       </div>
