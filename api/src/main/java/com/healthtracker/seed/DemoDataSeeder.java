@@ -5,6 +5,7 @@ import com.healthtracker.goal.GoalType;
 import com.healthtracker.medication.DoseSchedule;
 import com.healthtracker.medication.Medication;
 import com.healthtracker.medication.MedicationRepository;
+import com.healthtracker.medication.ScheduleType;
 import com.healthtracker.user.User;
 import com.healthtracker.user.UserRepository;
 import com.healthtracker.vital.GlucoseContext;
@@ -20,6 +21,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Random;
 import org.slf4j.Logger;
@@ -168,8 +170,10 @@ public class DemoDataSeeder implements ApplicationRunner {
                 first.plusDays(35), null, List.of(LocalTime.of(8, 0)), now);
         Medication atorvastatin = medication(userId, "Atorvastatin", "20 mg", "Before bed",
                 today.minusDays(200), null, List.of(LocalTime.of(21, 30)), now);
-        Medication vitaminD = medication(userId, "Vitamin D3", "1000 IU", null,
-                first, today.minusDays(120), List.of(LocalTime.of(8, 0)), now);
+        Medication vitaminD = medication(userId, "Vitamin D3", "20 000 IU", "Once a week with breakfast",
+                first, today.minusDays(120), List.of(LocalTime.of(9, 0)), now);
+        vitaminD.setScheduleType(ScheduleType.WEEKLY);
+        vitaminD.setDaysOfWeek(EnumSet.of(DayOfWeek.SUNDAY));
         vitaminD.setActive(false);
         medications.save(vitaminD);
         Medication ibuprofen = medication(userId, "Ibuprofen", "200 mg", "As needed for headaches, max 3 a day",
