@@ -27,46 +27,51 @@ public class MedicationService {
 
     @Transactional(readOnly = true)
     public List<MedicationResponse> list(Long userId, boolean includeArchived) {
+        LocalDate today = today(userId);
         return medications.findByUserIdOrderByNameAsc(userId).stream()
                 .filter(m -> includeArchived || m.isActive())
-                .map(MedicationResponse::from)
+                .map(m -> MedicationResponse.from(m, today))
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public MedicationResponse get(Long userId, Long id) {
-        return MedicationResponse.from(find(userId, id));
+        return MedicationResponse.from(find(userId, id), today(userId));
     }
 
     @Transactional
     public MedicationResponse create(Long userId, MedicationRequest request) {
         Medication medication = new Medication(userId, request.name().trim(), clock.instant());
         apply(medication, request);
-        return MedicationResponse.from(medications.save(medication));
+        return MedicationResponse.from(medications.save(medication), today(userId));
     }
 
     @Transactional
     public MedicationResponse update(Long userId, Long id, MedicationRequest request) {
         Medication medication = find(userId, id);
         apply(medication, request);
-        return MedicationResponse.from(medication);
+        return MedicationResponse.from(medication, today(userId));
     }
 
     /** Stops a medication: it disappears from today's schedule but its history stays. */
     @Transactional
     public MedicationResponse archive(Long userId, Long id) {
         Medication medication = find(userId, id);
-        LocalDate today = LocalDate.now(clock.withZone(userService.zoneOf(userId)));
+        LocalDate today = today(userId);
         medication.setActive(false);
         if (medication.getEndDate() == null || medication.getEndDate().isAfter(today)) {
             medication.setEndDate(today.isBefore(medication.getStartDate()) ? medication.getStartDate() : today);
         }
-        return MedicationResponse.from(medication);
+        return MedicationResponse.from(medication, today);
     }
 
     @Transactional
     public void delete(Long userId, Long id) {
         medications.delete(find(userId, id));
+    }
+
+    private LocalDate today(Long userId) {
+        return LocalDate.now(clock.withZone(userService.zoneOf(userId)));
     }
 
     Medication find(Long userId, Long id) {

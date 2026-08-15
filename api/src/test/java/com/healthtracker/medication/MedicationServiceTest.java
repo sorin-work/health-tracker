@@ -4,6 +4,7 @@ import static com.healthtracker.medication.MedicationFixtures.scheduled;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import com.healthtracker.common.ApiException;
@@ -44,6 +45,7 @@ class MedicationServiceTest {
     @BeforeEach
     void setUp() {
         service = new MedicationService(repository, userService, Clock.fixed(NOW, ZoneOffset.UTC));
+        lenient().when(userService.zoneOf(1L)).thenReturn(ZoneOffset.UTC);
     }
 
     private static MedicationRequest request(boolean asNeeded, List<LocalTime> times, LocalDate end) {
