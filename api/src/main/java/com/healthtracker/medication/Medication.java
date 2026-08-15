@@ -14,6 +14,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -70,6 +71,18 @@ public class Medication {
     @Convert(converter = DaysOfWeekConverter.class)
     @Column(name = "days_of_week", length = 80)
     private Set<DayOfWeek> daysOfWeek = EnumSet.noneOf(DayOfWeek.class);
+
+    /** Units left (tablets, puffs, ...). Null when the user does not track their supply. */
+    @Column(precision = 7, scale = 1)
+    private BigDecimal supply;
+
+    /** Units one dose uses, e.g. 2 tablets. */
+    @Column(name = "dose_quantity", nullable = false, precision = 5, scale = 2)
+    private BigDecimal doseQuantity = BigDecimal.ONE;
+
+    /** Warn when the supply runs out within this many days. */
+    @Column(name = "refill_warning_days", nullable = false)
+    private int refillWarningDays = 7;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "medication_times", joinColumns = @JoinColumn(name = "medication_id"))
@@ -204,6 +217,30 @@ public class Medication {
         this.daysOfWeek = daysOfWeek == null || daysOfWeek.isEmpty()
                 ? EnumSet.noneOf(DayOfWeek.class)
                 : EnumSet.copyOf(daysOfWeek);
+    }
+
+    public BigDecimal getSupply() {
+        return supply;
+    }
+
+    public void setSupply(BigDecimal supply) {
+        this.supply = supply;
+    }
+
+    public BigDecimal getDoseQuantity() {
+        return doseQuantity;
+    }
+
+    public void setDoseQuantity(BigDecimal doseQuantity) {
+        this.doseQuantity = doseQuantity;
+    }
+
+    public int getRefillWarningDays() {
+        return refillWarningDays;
+    }
+
+    public void setRefillWarningDays(int refillWarningDays) {
+        this.refillWarningDays = refillWarningDays;
     }
 
     public Instant getCreatedAt() {

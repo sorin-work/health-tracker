@@ -4,6 +4,7 @@ import com.healthtracker.common.ApiException;
 import com.healthtracker.medication.dto.MedicationRequest;
 import com.healthtracker.medication.dto.MedicationResponse;
 import com.healthtracker.user.UserService;
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -101,6 +102,9 @@ public class MedicationService {
         medication.setScheduleType(schedule);
         medication.setIntervalDays(schedule == ScheduleType.EVERY_N_DAYS ? request.intervalDays() : null);
         medication.setDaysOfWeek(schedule == ScheduleType.WEEKLY ? request.daysOfWeek() : null);
+        medication.setSupply(request.supply());
+        medication.setDoseQuantity(request.doseQuantity() != null ? request.doseQuantity() : BigDecimal.ONE);
+        medication.setRefillWarningDays(request.refillWarningDays() != null ? request.refillWarningDays() : 7);
     }
 
     private static String trimToNull(String s) {

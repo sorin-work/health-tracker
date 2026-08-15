@@ -10,6 +10,7 @@ import com.healthtracker.common.ApiException;
 import com.healthtracker.medication.dto.MedicationRequest;
 import com.healthtracker.medication.dto.MedicationResponse;
 import com.healthtracker.user.UserService;
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.DayOfWeek;
 import java.time.Instant;
@@ -143,5 +144,18 @@ class MedicationServiceTest {
         assertThat(response.scheduleType()).isEqualTo(ScheduleType.DAILY);
         assertThat(response.intervalDays()).isNull();
         assertThat(response.daysOfWeek()).isEmpty();
+    }
+
+    @Test
+    void storesTheSupplyAndDefaultsTheDoseToOneUnit() {
+        when(repository.save(any(Medication.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        MedicationResponse response = service.create(1L, new MedicationRequest(
+                "Metformin", "500 mg", null, false, List.of(LocalTime.of(8, 0)), TODAY, null, null, null, null,
+                new BigDecimal("60"), null, null));
+
+        assertThat(response.supply()).isEqualByComparingTo("60");
+        assertThat(response.doseQuantity()).isEqualByComparingTo("1");
+        assertThat(response.refillWarningDays()).isEqualTo(7);
     }
 }
