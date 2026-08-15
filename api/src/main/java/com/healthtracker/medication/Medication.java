@@ -116,6 +116,18 @@ public class Medication {
         };
     }
 
+    /**
+     * Adjusts the supply by {@code doses} doses (negative when taken, positive when a taken dose is
+     * undone). Does nothing when the supply is not tracked, and never goes below zero.
+     */
+    public void adjustSupply(int doses) {
+        if (supply == null || doses == 0) {
+            return;
+        }
+        BigDecimal next = supply.add(doseQuantity.multiply(BigDecimal.valueOf(doses)));
+        supply = next.signum() < 0 ? BigDecimal.ZERO : next;
+    }
+
     public Long getId() {
         return id;
     }

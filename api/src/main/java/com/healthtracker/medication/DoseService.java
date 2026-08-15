@@ -76,6 +76,10 @@ public class DoseService {
 
         DoseLog log = doseLogs.findByMedicationIdAndScheduledAt(medicationId, request.scheduledAt())
                 .orElseGet(() -> new DoseLog(medicationId, userId, request.scheduledAt()));
+        boolean wasTaken = log.getStatus() == DoseStatus.TAKEN;
+        boolean isTaken = request.status() == DoseStatus.TAKEN;
+        // Re-logging the same status must not count the dose twice.
+        medication.adjustSupply(wasTaken == isTaken ? 0 : isTaken ? -1 : 1);
         log.record(request.status(), clock.instant(), trimToNull(request.note()));
         DoseLog saved = doseLogs.save(log);
         return DoseResponse.of(medication, saved.getScheduledAt(), saved.getStatus(), saved);
@@ -84,6 +88,9 @@ public class DoseService {
     @Transactional
     public void undo(Long userId, Long logId) {
         DoseLog log = doseLogs.findByIdAndUserId(logId, userId).orElseThrow(() -> ApiException.notFound("Dose"));
+        if (log.getStatus() == DoseStatus.TAKEN) {
+            medications.findByIdAndUserId(log.getMedicationId(), userId).ifPresent(m -> m.adjustSupply(1));
+        }
         doseLogs.delete(log);
     }
 

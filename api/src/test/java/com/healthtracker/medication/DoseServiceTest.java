@@ -17,6 +17,7 @@ import com.healthtracker.medication.dto.AdherenceResponse;
 import com.healthtracker.medication.dto.DoseResponse;
 import com.healthtracker.medication.dto.RecordDoseRequest;
 import com.healthtracker.user.UserService;
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -185,5 +186,75 @@ class DoseServiceTest {
     void rejectsRangesLongerThanAYear() {
         assertThatThrownBy(() -> service.adherence(1L, TODAY.minusDays(400), TODAY))
                 .hasMessageContaining("at most");
+    }
+
+    private Medication trackedLisinopril(String supply) {
+        Medication m = scheduled(1, "Lisinopril", TODAY.minusDays(5), null, "08:00");
+        m.setSupply(new BigDecimal(supply));
+        m.setDoseQuantity(new BigDecimal("2"));
+        when(medications.findByIdAndUserId(1L, 1L)).thenReturn(Optional.of(m));
+        return m;
+    }
+
+    @Test
+    void takingADoseUsesUpTheSupply() {
+        Medication m = trackedLisinopril("30");
+        Instant slot = Instant.parse("2026-01-20T07:00:00Z");
+        when(doseLogs.findByMedicationIdAndScheduledAt(1L, slot)).thenReturn(Optional.empty());
+        when(doseLogs.save(any(DoseLog.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        service.record(1L, 1L, new RecordDoseRequest(slot, DoseStatus.TAKEN, null));
+
+        assertThat(m.getSupply()).isEqualByComparingTo("28");
+    }
+
+    @Test
+    void takingTheSameDoseTwiceCountsOnce() {
+        Medication m = trackedLisinopril("30");
+        Instant slot = Instant.parse("2026-01-20T07:00:00Z");
+        DoseLog existing = log(9, m, slot, DoseStatus.TAKEN);
+        when(doseLogs.findByMedicationIdAndScheduledAt(1L, slot)).thenReturn(Optional.of(existing));
+        when(doseLogs.save(existing)).thenReturn(existing);
+
+        service.record(1L, 1L, new RecordDoseRequest(slot, DoseStatus.TAKEN, "again"));
+
+        assertThat(m.getSupply()).isEqualByComparingTo("30");
+    }
+
+    @Test
+    void switchingATakenDoseToSkippedGivesTheSupplyBack() {
+        Medication m = trackedLisinopril("30");
+        Instant slot = Instant.parse("2026-01-20T07:00:00Z");
+        DoseLog existing = log(9, m, slot, DoseStatus.TAKEN);
+        when(doseLogs.findByMedicationIdAndScheduledAt(1L, slot)).thenReturn(Optional.of(existing));
+        when(doseLogs.save(existing)).thenReturn(existing);
+
+        service.record(1L, 1L, new RecordDoseRequest(slot, DoseStatus.SKIPPED, null));
+
+        assertThat(m.getSupply()).isEqualByComparingTo("32");
+    }
+
+    @Test
+    void undoingATakenDoseGivesTheSupplyBack() {
+        Medication m = trackedLisinopril("1");
+        DoseLog taken = log(9, m, Instant.parse("2026-01-20T07:00:00Z"), DoseStatus.TAKEN);
+        when(doseLogs.findByIdAndUserId(9L, 1L)).thenReturn(Optional.of(taken));
+
+        service.undo(1L, 9L);
+
+        assertThat(m.getSupply()).isEqualByComparingTo("3");
+        verify(doseLogs).delete(taken);
+    }
+
+    @Test
+    void supplyNeverGoesNegative() {
+        Medication m = trackedLisinopril("1");
+        Instant slot = Instant.parse("2026-01-20T07:00:00Z");
+        when(doseLogs.findByMedicationIdAndScheduledAt(1L, slot)).thenReturn(Optional.empty());
+        when(doseLogs.save(any(DoseLog.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        service.record(1L, 1L, new RecordDoseRequest(slot, DoseStatus.TAKEN, null));
+
+        assertThat(m.getSupply()).isEqualByComparingTo("0");
     }
 }
