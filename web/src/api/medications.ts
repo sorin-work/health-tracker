@@ -20,6 +20,14 @@ export interface Medication {
   intervalDays?: number;
   /** For WEEKLY. */
   daysOfWeek: DayOfWeek[];
+  /** Units left; absent when the supply is not tracked. */
+  supply?: number;
+  /** Units one dose uses. */
+  doseQuantity: number;
+  refillWarningDays: number;
+  /** Whole days the supply lasts at the current schedule. */
+  daysOfSupply?: number;
+  lowSupply: boolean;
 }
 
 export interface MedicationPayload {
@@ -34,6 +42,9 @@ export interface MedicationPayload {
   scheduleType?: ScheduleType;
   intervalDays?: number | null;
   daysOfWeek?: DayOfWeek[] | null;
+  supply?: number | null;
+  doseQuantity?: number | null;
+  refillWarningDays?: number | null;
 }
 
 export interface Dose {
@@ -74,6 +85,11 @@ export const updateMedication = (id: number, payload: MedicationPayload) =>
   api.put<Medication>(`/medications/${id}`, payload);
 
 export const archiveMedication = (id: number) => api.post<Medication>(`/medications/${id}/archive`);
+
+export const refillMedication = (id: number, quantity: number) =>
+  api.post<Medication>(`/medications/${id}/refill`, { quantity });
+
+export const lowSupplyMedications = () => api.get<Medication[]>('/medications/low-supply');
 
 export const deleteMedication = (id: number) => api.delete(`/medications/${id}`);
 

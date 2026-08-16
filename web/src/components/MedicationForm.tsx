@@ -37,6 +37,10 @@ export function MedicationForm({ medication, onDone }: { medication?: Medication
     medication?.daysOfWeek?.length ? medication.daysOfWeek : [weekdayOf(medication?.startDate ?? today())],
   );
   const [endDate, setEndDate] = useState(medication?.endDate ?? '');
+  const [trackSupply, setTrackSupply] = useState(medication?.supply !== undefined && medication?.supply !== null);
+  const [supply, setSupply] = useState(medication?.supply !== undefined ? String(medication.supply) : '');
+  const [doseQuantity, setDoseQuantity] = useState(String(medication?.doseQuantity ?? 1));
+  const [warningDays, setWarningDays] = useState(String(medication?.refillWarningDays ?? 7));
 
   const mutation = useMutation({
     mutationFn: (payload: MedicationPayload) =>
@@ -62,6 +66,9 @@ export function MedicationForm({ medication, onDone }: { medication?: Medication
       scheduleType: asNeeded ? 'DAILY' : scheduleType,
       intervalDays: !asNeeded && scheduleType === 'EVERY_N_DAYS' ? Number(intervalDays) : null,
       daysOfWeek: !asNeeded && scheduleType === 'WEEKLY' ? daysOfWeek : null,
+      supply: trackSupply && supply !== '' ? Number(supply) : null,
+      doseQuantity: Number(doseQuantity) || 1,
+      refillWarningDays: Number(warningDays),
     });
   }
 
@@ -169,6 +176,39 @@ export function MedicationForm({ medication, onDone }: { medication?: Medication
           <input type="date" value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} />
         </Field>
       </div>
+
+      <label className="checkbox">
+        <input type="checkbox" checked={trackSupply} onChange={(e) => setTrackSupply(e.target.checked)} />
+        Track how many are left and warn me before they run out
+      </label>
+
+      {trackSupply && (
+        <div className="form__row">
+          <Field label="Left now" hint="Tablets, puffs…" error={fields.supply}>
+            <input type="number" required min={0} step="any" value={supply} onChange={(e) => setSupply(e.target.value)} />
+          </Field>
+          <Field label="Per dose" error={fields.doseQuantity}>
+            <input
+              type="number"
+              required
+              min={0.25}
+              step="any"
+              value={doseQuantity}
+              onChange={(e) => setDoseQuantity(e.target.value)}
+            />
+          </Field>
+          <Field label="Warn days ahead" error={fields.refillWarningDays}>
+            <input
+              type="number"
+              required
+              min={0}
+              max={90}
+              value={warningDays}
+              onChange={(e) => setWarningDays(e.target.value)}
+            />
+          </Field>
+        </div>
+      )}
 
       <Field label="Instructions">
         <textarea rows={2} maxLength={500} value={instructions} placeholder="With food" onChange={(e) => setInstructions(e.target.value)} />
