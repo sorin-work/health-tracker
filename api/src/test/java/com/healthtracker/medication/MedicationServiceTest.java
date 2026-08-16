@@ -160,4 +160,39 @@ class MedicationServiceTest {
         assertThat(response.doseQuantity()).isEqualByComparingTo("1");
         assertThat(response.refillWarningDays()).isEqualTo(7);
     }
+
+    @Test
+    void refillAddsToTheSupply() {
+        Medication m = scheduled(3, "Metformin", TODAY.minusDays(10), null, "08:00", "20:00");
+        m.setSupply(new BigDecimal("4"));
+        when(repository.findByIdAndUserId(3L, 1L)).thenReturn(Optional.of(m));
+
+        MedicationResponse response = service.refill(1L, 3L, new BigDecimal("60"));
+
+        assertThat(response.supply()).isEqualByComparingTo("64");
+        assertThat(response.daysOfSupply()).isEqualTo(32);
+        assertThat(response.lowSupply()).isFalse();
+    }
+
+    @Test
+    void refillStartsTrackingAnUntrackedSupply() {
+        Medication m = scheduled(3, "Metformin", TODAY.minusDays(10), null, "08:00");
+        when(repository.findByIdAndUserId(3L, 1L)).thenReturn(Optional.of(m));
+
+        assertThat(service.refill(1L, 3L, new BigDecimal("30")).supply()).isEqualByComparingTo("30");
+    }
+
+    @Test
+    void lowSupplyListsTheMedicationsRunningOutSoonestFirst() {
+        Medication plenty = scheduled(1, "Atorvastatin", TODAY.minusDays(10), null, "21:30");
+        plenty.setSupply(new BigDecimal("80"));
+        Medication soon = scheduled(2, "Lisinopril", TODAY.minusDays(10), null, "08:00");
+        soon.setSupply(new BigDecimal("5"));
+        Medication sooner = scheduled(3, "Metformin", TODAY.minusDays(10), null, "08:00", "20:00");
+        sooner.setSupply(new BigDecimal("3"));
+        Medication untracked = scheduled(4, "Vitamin D3", TODAY.minusDays(10), null, "09:00");
+        when(repository.findByUserIdOrderByNameAsc(1L)).thenReturn(List.of(plenty, soon, sooner, untracked));
+
+        assertThat(service.lowSupply(1L)).extracting(MedicationResponse::name).containsExactly("Metformin", "Lisinopril");
+    }
 }

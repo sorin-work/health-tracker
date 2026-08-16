@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Comparator;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -63,6 +64,27 @@ public class MedicationService {
             medication.setEndDate(today.isBefore(medication.getStartDate()) ? medication.getStartDate() : today);
         }
         return MedicationResponse.from(medication, today);
+    }
+
+    /** Adds a new pack to the supply. Starts tracking the supply if it was not tracked yet. */
+    @Transactional
+    public MedicationResponse refill(Long userId, Long id, BigDecimal quantity) {
+        Medication medication = find(userId, id);
+        BigDecimal current = medication.getSupply() == null ? BigDecimal.ZERO : medication.getSupply();
+        medication.setSupply(current.add(quantity));
+        return MedicationResponse.from(medication, today(userId));
+    }
+
+    /** Active medications that are running out, soonest first. */
+    @Transactional(readOnly = true)
+    public List<MedicationResponse> lowSupply(Long userId) {
+        LocalDate today = today(userId);
+        return medications.findByUserIdOrderByNameAsc(userId).stream()
+                .filter(m -> SupplyEstimator.isLow(m, today))
+                .map(m -> MedicationResponse.from(m, today))
+                .sorted(Comparator.comparing(
+                        MedicationResponse::daysOfSupply, Comparator.nullsFirst(Comparator.naturalOrder())))
+                .toList();
     }
 
     @Transactional

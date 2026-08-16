@@ -4,6 +4,7 @@ import com.healthtracker.medication.dto.DoseResponse;
 import com.healthtracker.medication.dto.MedicationRequest;
 import com.healthtracker.medication.dto.MedicationResponse;
 import com.healthtracker.medication.dto.RecordDoseRequest;
+import com.healthtracker.medication.dto.RefillRequest;
 import com.healthtracker.security.AuthUser;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -38,6 +39,12 @@ public class MedicationController {
         return medicationService.list(user.id(), includeArchived);
     }
 
+    /** Medications that run out within their warning window. */
+    @GetMapping("/low-supply")
+    public List<MedicationResponse> lowSupply(@AuthenticationPrincipal AuthUser user) {
+        return medicationService.lowSupply(user.id());
+    }
+
     @GetMapping("/{id}")
     public MedicationResponse get(@AuthenticationPrincipal AuthUser user, @PathVariable Long id) {
         return medicationService.get(user.id(), id);
@@ -59,6 +66,12 @@ public class MedicationController {
     @PostMapping("/{id}/archive")
     public MedicationResponse archive(@AuthenticationPrincipal AuthUser user, @PathVariable Long id) {
         return medicationService.archive(user.id(), id);
+    }
+
+    @PostMapping("/{id}/refill")
+    public MedicationResponse refill(
+            @AuthenticationPrincipal AuthUser user, @PathVariable Long id, @Valid @RequestBody RefillRequest request) {
+        return medicationService.refill(user.id(), id, request.quantity());
     }
 
     @DeleteMapping("/{id}")

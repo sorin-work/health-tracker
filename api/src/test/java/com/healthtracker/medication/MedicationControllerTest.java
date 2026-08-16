@@ -19,6 +19,7 @@ import com.healthtracker.medication.dto.MedicationResponse;
 import com.healthtracker.medication.dto.RecordDoseRequest;
 import com.healthtracker.security.JwtService;
 import com.healthtracker.support.TestAuth;
+import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -110,6 +111,39 @@ class MedicationControllerTest {
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fields.intervalDays").exists());
+    }
+
+    @Test
+    void refillsASupply() throws Exception {
+        when(medicationService.refill(1L, 3L, new BigDecimal("30"))).thenReturn(new MedicationResponse(
+                3L, "Metformin", "500 mg", null, false, List.of(LocalTime.of(8, 0)), LocalDate.of(2026, 1, 1), null,
+                true, ScheduleType.DAILY, null, List.of(), new BigDecimal("34"), BigDecimal.ONE, 7, 34, false));
+
+        mvc.perform(post("/api/medications/3/refill")
+                        .with(TestAuth.signedIn())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"quantity\":30}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.supply").value(34))
+                .andExpect(jsonPath("$.daysOfSupply").value(34));
+    }
+
+    @Test
+    void refillNeedsAPositiveQuantity() throws Exception {
+        mvc.perform(post("/api/medications/3/refill")
+                        .with(TestAuth.signedIn())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"quantity\":0}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void listsMedicationsRunningLow() throws Exception {
+        when(medicationService.lowSupply(1L)).thenReturn(List.of());
+
+        mvc.perform(get("/api/medications/low-supply").with(TestAuth.signedIn())).andExpect(status().isOk());
+
+        verify(medicationService).lowSupply(1L);
     }
 
     @Test
