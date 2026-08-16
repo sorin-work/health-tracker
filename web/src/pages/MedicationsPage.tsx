@@ -18,9 +18,10 @@ import { PlusIcon } from '../components/icons';
 import { MedicationForm } from '../components/MedicationForm';
 import { Modal } from '../components/Modal';
 import { PageHeader } from '../components/PageHeader';
+import { RefillForm } from '../components/RefillForm';
 import { ProgressBar } from '../components/ProgressBar';
 import { addDays, formatDate, presetRange, today, type DateRange } from '../lib/dates';
-import { adherenceTone, describeSchedule } from '../lib/format';
+import { adherenceTone, describeSchedule, describeSupply } from '../lib/format';
 
 export function MedicationsPage() {
   const queryClient = useQueryClient();
@@ -28,6 +29,7 @@ export function MedicationsPage() {
   const [range, setRange] = useState<DateRange>(presetRange('30d'));
   const [showArchived, setShowArchived] = useState(false);
   const [editing, setEditing] = useState<Medication | 'new' | null>(null);
+  const [refilling, setRefilling] = useState<Medication | null>(null);
 
   const meds = useQuery({
     queryKey: ['medications', showArchived],
@@ -106,11 +108,23 @@ export function MedicationsPage() {
                     {m.endDate && ` until ${formatDate(m.endDate)}`}
                   </div>
                   {m.instructions && <div className="small">{m.instructions}</div>}
+                  {m.supply !== undefined && m.supply !== null && (
+                    <div className="small">
+                      <span className={m.lowSupply ? 'status status--warning' : 'muted'}>
+                        {describeSupply(m)}
+                      </span>
+                    </div>
+                  )}
                 </div>
                 <div className="row-actions">
                   <button className="link-button" onClick={() => setEditing(m)}>
                     Edit
                   </button>
+                  {m.active && (
+                    <button className="link-button" onClick={() => setRefilling(m)}>
+                      Refill
+                    </button>
+                  )}
                   {m.active ? (
                     <button
                       className="link-button"
@@ -183,6 +197,12 @@ export function MedicationsPage() {
           </>
         )}
       </section>
+
+      {refilling && (
+        <Modal title={`Refill ${refilling.name}`} onClose={() => setRefilling(null)}>
+          <RefillForm medication={refilling} onDone={() => setRefilling(null)} />
+        </Modal>
+      )}
 
       {editing && (
         <Modal title={editing === 'new' ? 'Add medication' : `Edit ${editing.name}`} onClose={() => setEditing(null)}>

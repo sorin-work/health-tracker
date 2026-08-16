@@ -165,6 +165,15 @@ export function describeSchedule(
   }
 }
 
+/** "34 left · about 17 days", "2 left · runs out today", "8 left" (as needed). */
+export function describeSupply(m: Pick<Medication, 'supply' | 'daysOfSupply' | 'lowSupply'>): string {
+  if (m.supply === undefined || m.supply === null) return '';
+  const left = `${formatNumber(m.supply, m.supply % 1 ? 1 : 0)} left`;
+  if (m.daysOfSupply === undefined || m.daysOfSupply === null) return m.lowSupply ? `${left} · refill soon` : left;
+  if (m.daysOfSupply === 0) return `${left} · runs out today`;
+  return `${left} · about ${m.daysOfSupply} ${m.daysOfSupply === 1 ? 'day' : 'days'}`;
+}
+
 /** Progress bar colour for an adherence percentage: green from 90% up. */
 export function adherenceTone(percent: number | undefined): 'success' | 'warning' | 'default' {
   if (percent === undefined) return 'default';

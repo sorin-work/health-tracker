@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   describeSchedule,
+  describeSupply,
   formatMinutes,
   formatNumber,
   formatReading,
@@ -68,5 +69,13 @@ describe('format', () => {
       describeSchedule({ ...base, times: ['09:00'], scheduleType: 'WEEKLY', daysOfWeek: ['THURSDAY', 'MONDAY'] }),
     ).toBe('Mon, Thu at 09:00');
     expect(describeSchedule({ ...base, asNeeded: true, times: [], scheduleType: 'DAILY' })).toBe('As needed');
+  });
+
+  it('describes the supply left', () => {
+    expect(describeSupply({ supply: 34, daysOfSupply: 17, lowSupply: false })).toBe('34 left · about 17 days');
+    expect(describeSupply({ supply: 1, daysOfSupply: 0, lowSupply: true })).toBe('1 left · runs out today');
+    expect(describeSupply({ supply: 2.5, daysOfSupply: 1, lowSupply: true })).toBe('2.5 left · about 1 day');
+    expect(describeSupply({ supply: 0, lowSupply: true })).toBe('0 left · refill soon');
+    expect(describeSupply({ lowSupply: false })).toBe('');
   });
 });
