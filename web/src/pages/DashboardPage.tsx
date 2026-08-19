@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router';
 import { listGoals } from '../api/goals';
 import { moodDaily, type MoodDay } from '../api/mood';
-import { adherence, dosesForDay } from '../api/medications';
+import { adherence, dosesForDay, lowSupplyMedications } from '../api/medications';
 import { listVitals, vitalSummary, type VitalSummary } from '../api/vitals';
 import { useUnitPrefs, useUser } from '../auth/AuthContext';
 import { DoseList } from '../components/DoseList';
@@ -15,7 +15,15 @@ import { ProgressBar } from '../components/ProgressBar';
 import { DEFAULT_WATER_TARGET_ML, WaterCard } from '../components/WaterCard';
 import { vitalUnit } from '../lib/units';
 import { addDays, formatDateTime, formatShortDate, formatWeekday, presetRange, today } from '../lib/dates';
-import { adherenceTone, formatNumber, formatReading, formatVitalValue, moodLabel, VITAL_META } from '../lib/format';
+import {
+  adherenceTone,
+  describeSupply,
+  formatNumber,
+  formatReading,
+  formatVitalValue,
+  moodLabel,
+  VITAL_META,
+} from '../lib/format';
 
 function greeting(date = new Date()): string {
   const h = date.getHours();
@@ -40,6 +48,7 @@ export function DashboardPage() {
     queryFn: () => listVitals({ from: last30.from, to: last30.to, flagged: true, size: 5 }),
   });
 
+  const lowSupply = useQuery({ queryKey: ['medications', 'low-supply'], queryFn: lowSupplyMedications });
   const last7 = presetRange('7d');
   const mood = useQuery({
     queryKey: ['mood', 'daily', last7.from, last7.to],
@@ -59,6 +68,22 @@ export function DashboardPage() {
           <p className="muted">Here is how the last 30 days look.</p>
         </div>
       </div>
+
+      {lowSupply.data && lowSupply.data.length > 0 && (
+        <div className="alert alert--warning" role="status">
+          <AlertIcon />
+          <div>
+            <strong>Running low:</strong>{' '}
+            {lowSupply.data.map((m, i) => (
+              <span key={m.id}>
+                {i > 0 && ', '}
+                {m.name} ({describeSupply(m)})
+              </span>
+            ))}
+            . <Link to="/medications">Log a refill</Link>
+          </div>
+        </div>
+      )}
 
       <ErrorMessage error={summary.error} />
       <div className="vital-cards">

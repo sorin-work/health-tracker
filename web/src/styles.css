@@ -572,6 +572,21 @@ input[type='range'] {
   color: var(--ok);
 }
 
+.alert--warning {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  background: var(--warn-soft);
+  color: var(--text);
+}
+
+.alert--warning svg {
+  flex: none;
+  margin-top: 0.15rem;
+  color: var(--warn);
+}
+
 /* Data display */
 
 .badge,
