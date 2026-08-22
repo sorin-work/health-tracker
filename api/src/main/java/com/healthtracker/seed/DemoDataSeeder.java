@@ -209,6 +209,11 @@ public class DemoDataSeeder implements ApplicationRunner {
                 rows.add(dose(ibuprofen, userId, taken, "TAKEN", taken, "Headache"));
             }
         }
+        // What is left in the current packs; lisinopril is due for a refill so the warning shows.
+        supply(metformin, "46", 7);
+        supply(lisinopril, "5", 7);
+        supply(atorvastatin, "54", 10);
+        supply(ibuprofen, "14", 0);
         jdbc.batchUpdate(
                 "insert into dose_logs (medication_id, user_id, scheduled_at, status, recorded_at, note)"
                         + " values (?, ?, ?, ?, ?, ?)",
@@ -379,6 +384,12 @@ public class DemoDataSeeder implements ApplicationRunner {
         m.setStartDate(start);
         m.setEndDate(end);
         return medications.save(m);
+    }
+
+    private void supply(Medication m, String units, int warningDays) {
+        m.setSupply(new BigDecimal(units));
+        m.setRefillWarningDays(warningDays);
+        medications.save(m);
     }
 
     private static Object[] reading(Long userId, VitalType type, double value, Double secondary,
