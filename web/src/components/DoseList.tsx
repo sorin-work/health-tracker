@@ -15,6 +15,8 @@ export function DoseList({ doses, now = new Date() }: { doses: Dose[]; now?: Dat
   const queryClient = useQueryClient();
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['doses'] });
+    // Taking (or undoing) a dose changes what is left of a tracked supply.
+    queryClient.invalidateQueries({ queryKey: ['medications'] });
   };
   const record = useMutation({
     mutationFn: ({ dose, status }: { dose: Dose; status: 'TAKEN' | 'SKIPPED' }) =>

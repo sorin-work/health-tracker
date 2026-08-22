@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Dose } from '../api/medications';
@@ -39,6 +39,16 @@ describe('DoseList', () => {
     renderWithProviders(<DoseList doses={[dose]} now={new Date('2026-01-20T12:00:00Z')} />);
 
     expect(screen.getByText('Overdue')).toBeInTheDocument();
+  });
+
+  it('refreshes medications after a dose so the supply is up to date', async () => {
+    const dose: Dose = { ...base, scheduledAt: '2026-01-20T19:00:00Z', status: 'PENDING' };
+    const { queryClient } = renderWithProviders(<DoseList doses={[dose]} />);
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
+
+    await userEvent.click(screen.getByRole('button', { name: /as taken/ }));
+
+    await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: ['medications'] }));
   });
 
   it('can skip a dose', async () => {
