@@ -3,14 +3,20 @@ package com.healthtracker.vital;
 import com.healthtracker.common.ApiException;
 import com.healthtracker.vital.dto.VitalReadingRequest;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 
-/** Catches typos (a weight of 7000 kg, a missing diastolic value) before they skew the charts. */
+/** Catches typos (a weight of 7000 kg, a reading dated next year) before they skew the charts. */
 public final class VitalValidator {
+
+    private static final Duration FUTURE_TOLERANCE = Duration.ofMinutes(10);
 
     private VitalValidator() {}
 
     public static void validate(VitalReadingRequest r, Instant now) {
+        if (r.measuredAt().isAfter(now.plus(FUTURE_TOLERANCE))) {
+            throw ApiException.badRequest("Readings cannot be in the future");
+        }
         switch (r.type()) {
             case WEIGHT -> within(r.value(), 20, 400, "Weight");
             case HEART_RATE -> within(r.value(), 20, 250, "Heart rate");

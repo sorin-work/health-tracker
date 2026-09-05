@@ -59,4 +59,11 @@ class VitalValidatorTest {
                         req(VitalType.WEIGHT, "80", null, GlucoseContext.FASTING), NOW))
                 .hasMessageContaining("Only glucose");
     }
+
+    @Test
+    void rejectsReadingsInTheFuture() {
+        var future = new VitalReadingRequest(
+                VitalType.WEIGHT, new BigDecimal("80"), null, null, NOW.plusSeconds(3600), null);
+        assertThatThrownBy(() -> VitalValidator.validate(future, NOW)).hasMessageContaining("future");
+    }
 }
