@@ -45,7 +45,7 @@ export function TrendChart({
   if (band) values.push(band.low, band.high);
   const min = Math.min(...values);
   const max = Math.max(...values);
-  const pad = (max - min) * 0.1;
+  const pad = Math.max((max - min) * 0.1, type === 'SLEEP' ? 0.5 : 2);
   const domain = [Math.floor(min - pad), Math.ceil(max + pad)];
 
   return (
