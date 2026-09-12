@@ -143,9 +143,14 @@ public class ExportService {
     }
 
     private String symptoms(Long userId, LocalDate from, LocalDate to, ZoneId zone) {
-        CsvWriter csv = new CsvWriter().row("occurred_at", "symptom", "severity", "duration_minutes", "notes");
+        CsvWriter csv = new CsvWriter().row("occurred_at", "symptom", "severity", "duration_minutes", "notes", "tags");
         symptomService.entries(userId, from, to, null).reversed().forEach(s -> csv.row(
-                local(s.occurredAt(), zone), s.name(), s.severity(), s.durationMinutes(), s.notes()));
+                local(s.occurredAt(), zone),
+                s.name(),
+                s.severity(),
+                s.durationMinutes(),
+                s.notes(),
+                s.tags() == null ? null : String.join("; ", s.tags())));
         return csv.toString();
     }
 

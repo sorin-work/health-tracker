@@ -121,7 +121,20 @@ class ExportServiceTest {
         ExportService.Export export = service.export(1L, ExportDataset.SYMPTOMS, null, null);
 
         assertThat(export.filename()).isEqualTo("health-tracker-symptoms-2025-12-02_2026-03-01.csv");
-        assertThat(export.content()).contains("2026-02-01 11:00,Headache,4,60,");
+        assertThat(export.content()).contains("2026-02-01 11:00,Headache,4,60,,");
+    }
+
+    @Test
+    void symptomTagsShareOneColumn() {
+        when(symptomService.entries(1L, FROM, TO, null)).thenReturn(List.of(new SymptomResponse(
+                1L, "Migraine", 7, Instant.parse("2026-02-01T10:00:00Z"), null, "Dark room helped",
+                List.of("screen time", "stress"))));
+
+        String csv = service.export(1L, ExportDataset.SYMPTOMS, FROM, TO).content();
+
+        assertThat(csv.split("\r\n")).containsExactly(
+                "occurred_at,symptom,severity,duration_minutes,notes,tags",
+                "2026-02-01 11:00,Migraine,7,,Dark room helped,screen time; stress");
     }
 
     @Test
