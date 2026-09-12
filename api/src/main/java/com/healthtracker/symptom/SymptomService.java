@@ -83,6 +83,19 @@ public class SymptomService {
         symptom.setOccurredAt(request.occurredAt());
         symptom.setDurationMinutes(request.durationMinutes());
         symptom.setNotes(request.notes() == null || request.notes().isBlank() ? null : request.notes().trim());
+        symptom.setTags(normalizeTags(request.tags()));
+    }
+
+    /** Lower case, single spaces, no duplicates: "Stress", " stress " and "STRESS" are one tag. */
+    static List<String> normalizeTags(List<String> tags) {
+        if (tags == null) {
+            return List.of();
+        }
+        return tags.stream()
+                .map(t -> t.trim().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT))
+                .filter(t -> !t.isEmpty())
+                .distinct()
+                .toList();
     }
 
     /**

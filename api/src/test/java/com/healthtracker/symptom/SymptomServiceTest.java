@@ -15,6 +15,7 @@ import com.healthtracker.user.UserService;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -73,5 +74,15 @@ class SymptomServiceTest {
         assertThatThrownBy(() -> service.create(1L, future))
                 .isInstanceOf(ApiException.class)
                 .hasMessageContaining("future");
+    }
+
+    @Test
+    void tagsAreLowerCasedAndDeduplicated() {
+        SymptomRequest withTags = new SymptomRequest(
+                "Headache", 5, NOW.minusSeconds(60), null, null, List.of("Stress", " stress ", "after  coffee", " "));
+
+        SymptomResponse created = service.create(1L, withTags);
+
+        assertThat(created.tags()).containsExactly("after coffee", "stress");
     }
 }
