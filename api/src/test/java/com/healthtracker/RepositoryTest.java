@@ -181,4 +181,21 @@ class RepositoryTest {
         assertThat(journal.search(userId, from, to, null)).hasSize(3);
         assertThat(journal.search(userId, from, LocalDate.of(2026, 7, 1), null)).hasSize(1);
     }
+
+    @Test
+    void symptomTagsAreOrderedByFrequency() {
+        for (List<String> tags : List.of(List.of("stress", "coffee"), List.of("stress"), List.of("weather", "stress"))) {
+            Symptom s = new Symptom(userId, Instant.EPOCH);
+            s.setName("Headache");
+            s.setSeverity(4);
+            s.setOccurredAt(Instant.parse("2026-09-01T10:00:00Z"));
+            s.setTags(tags);
+            symptoms.save(s);
+        }
+        em.flush();
+        em.clear();
+
+        assertThat(symptoms.findTagsByFrequency(userId)).containsExactly("stress", "coffee", "weather");
+        assertThat(symptoms.findTagsByFrequency(otherUserId)).isEmpty();
+    }
 }

@@ -28,8 +28,12 @@ public class SymptomService {
 
     @Transactional(readOnly = true)
     public PageResponse<SymptomResponse> list(
-            Long userId, LocalDate from, LocalDate to, String name, int page, int size) {
-        return PageResponse.of(entries(userId, from, to, name), page, size);
+            Long userId, LocalDate from, LocalDate to, String name, String tag, int page, int size) {
+        String wantedTag = tag == null || tag.isBlank() ? null : normalizeTags(List.of(tag)).getFirst();
+        List<SymptomResponse> entries = entries(userId, from, to, name).stream()
+                .filter(s -> wantedTag == null || s.tags().contains(wantedTag))
+                .toList();
+        return PageResponse.of(entries, page, size);
     }
 
     /** Entries in a date range, newest first. */
@@ -49,6 +53,11 @@ public class SymptomService {
     @Transactional(readOnly = true)
     public List<String> names(Long userId) {
         return symptoms.findNamesByFrequency(userId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> tags(Long userId) {
+        return symptoms.findTagsByFrequency(userId);
     }
 
     @Transactional

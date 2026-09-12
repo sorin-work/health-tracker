@@ -37,14 +37,21 @@ public class SymptomController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
             @RequestParam(required = false) String name,
+            @RequestParam(required = false) String tag,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
-        return symptomService.list(user.id(), from, to, name, page, size);
+        return symptomService.list(user.id(), from, to, name, tag, page, size);
     }
 
     @GetMapping("/names")
     public List<String> names(@AuthenticationPrincipal AuthUser user) {
         return symptomService.names(user.id());
+    }
+
+    /** Tags used so far, most used first. */
+    @GetMapping("/tags")
+    public List<String> tags(@AuthenticationPrincipal AuthUser user) {
+        return symptomService.tags(user.id());
     }
 
     @PostMapping

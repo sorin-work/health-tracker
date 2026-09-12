@@ -85,4 +85,25 @@ class SymptomServiceTest {
 
         assertThat(created.tags()).containsExactly("after coffee", "stress");
     }
+
+    @Test
+    void filtersByTagIgnoringCase() {
+        Symptom stress = new Symptom(1L, NOW);
+        stress.setName("Headache");
+        stress.setSeverity(5);
+        stress.setOccurredAt(NOW.minusSeconds(3600));
+        stress.setTags(List.of("stress"));
+        Symptom other = new Symptom(1L, NOW);
+        other.setName("Headache");
+        other.setSeverity(3);
+        other.setOccurredAt(NOW.minusSeconds(7200));
+        when(userService.zoneOf(1L)).thenReturn(ZoneOffset.UTC);
+        when(symptoms.findByUserIdAndOccurredAtGreaterThanEqualAndOccurredAtLessThanOrderByOccurredAtDesc(
+                        eq(1L), any(), any()))
+                .thenReturn(List.of(stress, other));
+
+        assertThat(service.list(1L, null, null, null, "Stress", 0, 50).items())
+                .singleElement()
+                .satisfies(s -> assertThat(s.severity()).isEqualTo(5));
+    }
 }
