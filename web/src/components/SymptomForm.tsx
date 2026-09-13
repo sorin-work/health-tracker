@@ -1,15 +1,24 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useId, useState, type FormEvent } from 'react';
-import { createSymptom, symptomNames, updateSymptom, type Symptom, type SymptomPayload } from '../api/symptoms';
+import {
+  createSymptom,
+  symptomNames,
+  symptomTags,
+  updateSymptom,
+  type Symptom,
+  type SymptomPayload,
+} from '../api/symptoms';
 import { fromLocalInputValue, toLocalInputValue } from '../lib/dates';
 import { severityLabel } from '../lib/format';
 import { ErrorMessage } from './ErrorMessage';
 import { Field } from './Field';
+import { TagInput } from './TagInput';
 
 export function SymptomForm({ symptom, onDone }: { symptom?: Symptom; onDone: () => void }) {
   const queryClient = useQueryClient();
   const listId = useId();
   const names = useQuery({ queryKey: ['symptoms', 'names'], queryFn: symptomNames });
+  const knownTags = useQuery({ queryKey: ['symptoms', 'tags'], queryFn: symptomTags });
   const [name, setName] = useState(symptom?.name ?? '');
   const [severity, setSeverity] = useState(symptom?.severity ?? 4);
   const [occurredAt, setOccurredAt] = useState(
@@ -17,6 +26,7 @@ export function SymptomForm({ symptom, onDone }: { symptom?: Symptom; onDone: ()
   );
   const [duration, setDuration] = useState(symptom?.durationMinutes ? String(symptom.durationMinutes) : '');
   const [notes, setNotes] = useState(symptom?.notes ?? '');
+  const [tags, setTags] = useState<string[]>(symptom?.tags ?? []);
 
   const mutation = useMutation({
     mutationFn: (payload: SymptomPayload) => (symptom ? updateSymptom(symptom.id, payload) : createSymptom(payload)),
@@ -34,6 +44,7 @@ export function SymptomForm({ symptom, onDone }: { symptom?: Symptom; onDone: ()
       occurredAt: fromLocalInputValue(occurredAt),
       durationMinutes: duration ? Number(duration) : null,
       notes: notes.trim() || null,
+      tags,
     });
   }
 
@@ -64,6 +75,8 @@ export function SymptomForm({ symptom, onDone }: { symptom?: Symptom; onDone: ()
       <Field label="Notes" hint="Triggers, what helped…">
         <textarea rows={2} maxLength={500} value={notes} onChange={(e) => setNotes(e.target.value)} />
       </Field>
+
+      <TagInput value={tags} onChange={setTags} suggestions={knownTags.data} />
 
       <ErrorMessage error={mutation.error} />
 

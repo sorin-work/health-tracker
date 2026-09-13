@@ -7,6 +7,7 @@ export interface Symptom {
   occurredAt: string;
   durationMinutes?: number;
   notes?: string;
+  tags: string[];
 }
 
 export interface SymptomPayload {
@@ -15,12 +16,22 @@ export interface SymptomPayload {
   occurredAt: string;
   durationMinutes?: number | null;
   notes?: string | null;
+  tags?: string[];
 }
 
-export const listSymptoms = (filters: { from?: string; to?: string; name?: string; page?: number; size?: number }) =>
+export const listSymptoms = (filters: {
+  from?: string;
+  to?: string;
+  name?: string;
+  tag?: string;
+  page?: number;
+  size?: number;
+}) =>
   api.get<Page<Symptom>>(`/symptoms${toQuery(filters)}`);
 
 export const symptomNames = () => api.get<string[]>('/symptoms/names');
+
+export const symptomTags = () => api.get<string[]>('/symptoms/tags');
 
 export const createSymptom = (payload: SymptomPayload) => api.post<Symptom>('/symptoms', payload);
 
