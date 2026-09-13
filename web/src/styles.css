@@ -1155,6 +1155,20 @@ input[type='range'] {
   border-radius: 999px;
 }
 
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.2rem;
+}
+
+.tag--button {
+  border: 0;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
 .tag button {
   display: inline-flex;
   padding: 0;
