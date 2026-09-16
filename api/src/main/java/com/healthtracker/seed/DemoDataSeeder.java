@@ -246,6 +246,14 @@ public class DemoDataSeeder implements ApplicationRunner {
                 "insert into symptoms (user_id, name, severity, occurred_at, duration_minutes, notes, created_at)"
                         + " values (?, ?, ?, ?, ?, ?, ?)",
                 rows);
+        // Tag some of them so the tag filter has something to show. Picking by id keeps it repeatable.
+        String tag = "insert into symptom_tags (symptom_id, tag) select id, ? from symptoms"
+                + " where user_id = ? and name = ? and mod(id, ?) = ?";
+        jdbc.update(tag, "stress", userId, "Headache", 3, 0);
+        jdbc.update(tag, "screen time", userId, "Headache", 4, 1);
+        jdbc.update(tag, "standing up", userId, "Dizziness", 1, 0);
+        jdbc.update(tag, "gardening", userId, "Lower back pain", 2, 0);
+        jdbc.update(tag, "after metformin", userId, "Nausea", 1, 0);
         return rows.size();
     }
 
