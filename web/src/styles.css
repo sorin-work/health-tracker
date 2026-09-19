@@ -38,6 +38,34 @@
   -webkit-font-smoothing: antialiased;
 }
 
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #0d1414;
+    --surface: #152020;
+    --surface-muted: #1c2929;
+    --border: #2a3a3a;
+    --text: #e3eceb;
+    --text-muted: #94a6a5;
+    --accent: #2dd4bf;
+    --accent-hover: #5eead4;
+    --accent-soft: #123331;
+    --ok: #4ade80;
+    --ok-soft: #14301f;
+    --warn: #fb923c;
+    --warn-soft: #3a2414;
+    --critical: #f87171;
+    --critical-soft: #3a1a1a;
+    --chart-1: #2dd4bf;
+    --chart-2: #a78bfa;
+    --chart-3: #fb923c;
+    --chart-4: #60a5fa;
+    --chart-5: #f472b6;
+    --overlay: rgb(0 0 0 / 60%);
+    --shadow: none;
+  }
+}
+
 *,
 *::before,
 *::after {
