@@ -14,6 +14,9 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
@@ -43,15 +46,27 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
         HttpMessageNotReadableException.class,
         MethodArgumentTypeMismatchException.class,
-        MissingServletRequestParameterException.class
+        MissingServletRequestParameterException.class,
+        MissingServletRequestPartException.class,
+        MultipartException.class
     })
     public ResponseEntity<ApiError> handleBadInput(Exception e) {
         String message = e instanceof MissingServletRequestParameterException m
                 ? "Missing parameter '" + m.getParameterName() + "'"
-                : e instanceof MethodArgumentTypeMismatchException t
-                        ? "Invalid value for '" + t.getName() + "'"
-                        : "Malformed request body";
+                : e instanceof MissingServletRequestPartException p
+                        ? "Missing file '" + p.getRequestPartName() + "'"
+                        : e instanceof MethodArgumentTypeMismatchException t
+                                ? "Invalid value for '" + t.getName() + "'"
+                                : e instanceof MultipartException
+                                        ? "Expected a file upload"
+                                        : "Malformed request body";
         return ResponseEntity.badRequest().body(ApiError.of(400, "bad_request", message));
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiError> handleTooLarge(MaxUploadSizeExceededException e) {
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                .body(ApiError.of(413, "too_large", "The file is too large (at most 5 MB)"));
     }
 
     @ExceptionHandler(AccessDeniedException.class)

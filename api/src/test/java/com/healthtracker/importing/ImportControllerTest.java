@@ -1,5 +1,8 @@
 package com.healthtracker.importing;
 
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -21,6 +24,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 @WebMvcTest(ImportController.class)
 @Import(SecurityConfig.class)
@@ -65,6 +69,25 @@ class ImportControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("The file is empty"));
         verifyNoInteractions(vitalImportService);
+    }
+
+    @Test
+    void needsAFile() throws Exception {
+        mvc.perform(multipart("/api/import/vitals").with(TestAuth.signedIn()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Missing file 'file'"));
+    }
+
+    @Test
+    void tooLargeFilesGetAJson413() throws Exception {
+        when(vitalImportService.importCsv(anyLong(), anyString(), anyBoolean()))
+                .thenThrow(new MaxUploadSizeExceededException(5 * 1024 * 1024));
+
+        mvc.perform(multipart("/api/import/vitals")
+                        .file(new MockMultipartFile("file", "v.csv", "text/csv", "x".getBytes(StandardCharsets.UTF_8)))
+                        .with(TestAuth.signedIn()))
+                .andExpect(status().isPayloadTooLarge())
+                .andExpect(jsonPath("$.error").value("too_large"));
     }
 
     @Test
