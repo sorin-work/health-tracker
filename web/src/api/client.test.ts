@@ -28,6 +28,22 @@ describe('api client', () => {
     setUnauthorizedHandler(null);
   });
 
+  it('uploads files as multipart without forcing a json content type', async () => {
+    setToken('abc');
+    fetchMock.mockResolvedValue(jsonResponse(200, { rows: 1 }));
+
+    const result = await api.upload<{ rows: number }>('/import/vitals', new Blob(['a,b\n1,2\n']), 'vitals.csv');
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('/api/import/vitals');
+    expect(init.method).toBe('POST');
+    expect(init.body).toBeInstanceOf(FormData);
+    expect((init.body as FormData).get('file')).toBeInstanceOf(Blob);
+    expect(init.headers['Content-Type']).toBeUndefined();
+    expect(init.headers.Authorization).toBe('Bearer abc');
+    expect(result.rows).toBe(1);
+  });
+
   it('sends the bearer token', async () => {
     setToken('abc');
     fetchMock.mockResolvedValue(jsonResponse(200, { ok: true }));

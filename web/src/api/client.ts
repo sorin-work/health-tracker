@@ -45,12 +45,14 @@ async function send(method: Method, path: string, body?: unknown): Promise<Respo
   const headers: Record<string, string> = {};
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  // FormData sets its own multipart content type (with the boundary); everything else is JSON.
+  const isForm = body instanceof FormData;
+  if (body !== undefined && !isForm) headers['Content-Type'] = 'application/json';
 
   const res = await fetch(`/api${path}`, {
     method,
     headers,
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: body === undefined ? undefined : isForm ? body : JSON.stringify(body),
   });
 
   if (!res.ok) {
@@ -80,6 +82,12 @@ export const api = {
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, body ?? {}),
   put: <T>(path: string, body: unknown) => request<T>('PUT', path, body),
   delete: (path: string) => request<void>('DELETE', path),
+  /** Posts a file as multipart form data under the field name `file`. */
+  upload: <T>(path: string, file: File | Blob, filename = 'upload.csv') => {
+    const form = new FormData();
+    form.append('file', file, filename);
+    return request<T>('POST', path, form);
+  },
   /** Fetches a file and returns it with the server's suggested name. */
   download: async (path: string): Promise<{ blob: Blob; filename: string | null }> => {
     const res = await send('GET', path);
