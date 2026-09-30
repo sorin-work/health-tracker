@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { downloadExport, type ExportDataset } from '../api/exports';
 import { DateRangePicker } from '../components/DateRangePicker';
 import { ErrorMessage } from '../components/ErrorMessage';
@@ -51,6 +52,11 @@ export function ExportPage() {
       <PageHeader
         title="Export"
         description="Download your data as CSV to share with your doctor or open in a spreadsheet. Times are in your time zone."
+        actions={
+          <Link to="/import" className="button button--ghost">
+            Import readings
+          </Link>
+        }
       />
       <section className="card">
         <div className="card__header card__header--wrap">
