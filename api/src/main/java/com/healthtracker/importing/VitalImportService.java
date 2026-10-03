@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +41,8 @@ public class VitalImportService {
     static final int MAX_ROWS = 10_000;
     static final int PREVIEW_ROWS = 10;
     private static final DateTimeFormatter LOCAL = DateTimeFormatter.ofPattern("yyyy-MM-dd[ ]['T']HH:mm[:ss]");
+
+    private static final Logger log = LoggerFactory.getLogger(VitalImportService.class);
 
     private final VitalReadingRepository readings;
     private final UserService userService;
@@ -91,6 +95,7 @@ public class VitalImportService {
                 entities.add(reading);
             }
             readings.saveAll(entities);
+            log.info("Imported {} readings for user {} ({} duplicates skipped)", entities.size(), userId, duplicates);
         }
         return new ImportResult(
                 !save,
