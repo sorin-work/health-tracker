@@ -61,8 +61,13 @@ export function ImportPage() {
               id="import-file"
               type="file"
               accept=".csv,text/csv"
-              onChange={(e) => choose(e.target.files?.[0] ?? null)}
+              onChange={(e) => {
+                choose(e.target.files?.[0] ?? null);
+                // Clear the input so choosing the same (fixed) file again fires another change event.
+                e.target.value = '';
+              }}
             />
+            {file && <span className="field__hint">{file.name}</span>}
           </div>
           <ErrorMessage error={check.error ?? save.error} />
           {check.isPending && <p className="muted">Checking the file…</p>}

@@ -55,4 +55,16 @@ describe('ImportPage', () => {
     expect(await screen.findByText('Line 4: Weight must be between 20 and 400')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Import/ })).toBeDisabled();
   });
+
+  it('checks the same file again after it was fixed', async () => {
+    vi.mocked(importsApi.importVitals).mockResolvedValue(clean);
+    renderWithProviders(<ImportPage />);
+    const input = screen.getByLabelText('CSV file');
+
+    await userEvent.upload(input, file);
+    await screen.findByText('128/82 mmHg');
+    await userEvent.upload(input, file);
+
+    await waitFor(() => expect(importsApi.importVitals).toHaveBeenCalledTimes(2));
+  });
 });
