@@ -123,3 +123,10 @@ export const BookIcon = (p: IconProps) => (
     <path d="M4 4.5A1.5 1.5 0 0 1 5.5 3H20v16H5.5A1.5 1.5 0 0 0 4 20.5zM4 20.5A1.5 1.5 0 0 0 5.5 22H20" />
   </Icon>
 );
+
+export const ClipboardIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="5" y="4" width="14" height="17" rx="2" />
+    <path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h3" />
+  </Icon>
+);

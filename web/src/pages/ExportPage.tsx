@@ -53,9 +53,14 @@ export function ExportPage() {
         title="Export"
         description="Download your data as CSV to share with your doctor or open in a spreadsheet. Times are in your time zone."
         actions={
-          <Link to="/import" className="button button--ghost">
-            Import readings
-          </Link>
+          <>
+            <Link to="/report" className="button button--ghost">
+              Printable report
+            </Link>
+            <Link to="/import" className="button button--ghost">
+              Import readings
+            </Link>
+          </>
         }
       />
       <section className="card">
