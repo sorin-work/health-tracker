@@ -11,6 +11,7 @@ import { LoginPage } from './pages/LoginPage';
 import { MedicationsPage } from './pages/MedicationsPage';
 import { MoodPage } from './pages/MoodPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { ReportPage } from './pages/ReportPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { SymptomsPage } from './pages/SymptomsPage';
 import { VitalsPage } from './pages/VitalsPage';
@@ -36,6 +37,7 @@ export function App() {
           <Route path="/journal" element={<JournalPage />} />
           <Route path="/export" element={<ExportPage />} />
           <Route path="/import" element={<ImportPage />} />
+          <Route path="/report" element={<ReportPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Route>
