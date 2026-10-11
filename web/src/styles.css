@@ -1550,3 +1550,58 @@ input[type='range'] {
     grid-template-columns: 1fr;
   }
 }
+
+/* Printing: only the page content, in black on white, without the navigation. */
+
+@media print {
+  :root {
+    color-scheme: light;
+    --bg: #fff;
+    --surface: #fff;
+    --surface-muted: #f3f4f6;
+    --border: #c9d1d1;
+    --text: #000;
+    --text-muted: #444;
+    --shadow: none;
+    font-size: 11pt;
+  }
+
+  .sidebar,
+  .topbar,
+  .skip-link,
+  .no-print,
+  .content > .disclaimer {
+    display: none !important;
+  }
+
+  .shell {
+    display: block;
+  }
+
+  .content {
+    padding: 0;
+    max-width: none;
+  }
+
+  .report__sheet {
+    padding: 0;
+    border: 0;
+  }
+
+  .report section,
+  .report tr {
+    break-inside: avoid;
+  }
+
+  .report thead {
+    display: table-header-group;
+  }
+
+  a {
+    color: inherit;
+  }
+}
+
+@page {
+  margin: 15mm 12mm;
+}
