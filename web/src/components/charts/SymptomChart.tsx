@@ -1,16 +1,20 @@
 import { CartesianGrid, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis } from 'recharts';
 import type { Symptom } from '../../api/symptoms';
 import { formatDateTime } from '../../lib/dates';
+import { OTHER, symptomSeriesNames } from '../../lib/symptoms';
 
+/** One colour per series, as many as SERIES_LIMIT in lib/symptoms. */
 const COLORS = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)'];
 
 /** Each entry as a dot: time on x, severity on y, one colour per symptom. */
 export function SymptomChart({ symptoms }: { symptoms: Symptom[] }) {
-  const names = [...new Set(symptoms.map((s) => s.name))].slice(0, COLORS.length);
+  const names = symptomSeriesNames(symptoms);
+  const own = new Set(names.filter((n) => n !== OTHER));
+  const seriesOf = (name: string) => (own.has(name) ? name : OTHER);
   const series = names.map((name) => ({
     name,
     data: symptoms
-      .filter((s) => s.name === name)
+      .filter((s) => seriesOf(s.name) === name)
       .map((s) => ({ t: new Date(s.occurredAt).getTime(), severity: s.severity, at: s.occurredAt })),
   }));
 
