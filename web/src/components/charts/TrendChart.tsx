@@ -12,6 +12,7 @@ import {
 } from 'recharts';
 import type { TrendPoint, VitalType } from '../../api/vitals';
 import { formatShortDate } from '../../lib/dates';
+import { yDomain } from '../../lib/charts';
 import { formatNumber, VITAL_META } from '../../lib/format';
 
 export interface Band {
@@ -43,10 +44,7 @@ export function TrendChart({
   const isBp = type === 'BLOOD_PRESSURE';
   const values = points.flatMap((p) => [p.average, p.averageSecondary ?? p.average]);
   if (band) values.push(band.low, band.high);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const pad = Math.max((max - min) * 0.1, type === 'SLEEP' ? 0.5 : 2);
-  const domain = [Math.floor(min - pad), Math.ceil(max + pad)];
+  const domain = yDomain(values, decimals ?? meta.decimals);
 
   return (
     <div
@@ -68,7 +66,7 @@ export function TrendChart({
             fontSize={12}
             minTickGap={24}
           />
-          <YAxis domain={domain} stroke="var(--text-muted)" fontSize={12} allowDecimals={type === 'SLEEP' || type === 'WEIGHT'} />
+          <YAxis domain={domain} stroke="var(--text-muted)" fontSize={12} allowDecimals={(decimals ?? meta.decimals) > 0} />
           {band && (
             <ReferenceArea y1={band.low} y2={band.high} fill="var(--ok)" fillOpacity={0.08} stroke="none" ifOverflow="extendDomain" />
           )}
