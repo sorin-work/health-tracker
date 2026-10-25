@@ -3,7 +3,7 @@
 A personal health log for people who need to keep an eye on a few numbers: blood
 pressure, weight, glucose, sleep, the medications they take and how they feel. It
 flags readings that fall outside a reference range, tracks medication adherence and
-exports everything as CSV so it can be shared with a doctor.
+supply, and puts it all into a printable report (or CSV files) to share with a doctor.
 
 > **Not medical advice.** Health Tracker is a record-keeping tool. The default ranges
 > are general guidance for adults and may not be right for you. Talk to your doctor
@@ -28,7 +28,8 @@ exports everything as CSV so it can be shared with a doctor.
 - **Adherence**: taken / (taken + skipped + missed) for any period, overall, per
   medication and per day.
 - **Symptoms**: free-text name (with suggestions from earlier entries), severity
-  1-10, duration and notes, plotted over time.
+  1-10, duration, notes and tags (e.g. "stress", "after coffee") to look for triggers,
+  plotted over time and filterable by name or tag.
 - **Activity**: walks, runs, cycling, swims, strength, yoga and more, with duration,
   distance, steps and calories. Weekly active-minute totals.
 - **Mood**: a quick check-in (1-5) with an optional energy level and note, a daily
@@ -40,6 +41,11 @@ exports everything as CSV so it can be shared with a doctor.
 - **Goals**: target weight (with an optional target date and an on-track check),
   daily steps, weekly active minutes, weekly workouts, nightly sleep and daily water,
   with progress computed from the logged data.
+- **Doctor report**: a one-page summary for any period up to a year (vital averages
+  and ranges, out-of-range readings, medications with adherence, symptoms, mood,
+  activity and notes), laid out for printing or saving as a PDF.
+- **CSV import** of readings from another app or a spreadsheet, with a preview, row by
+  row validation and duplicate detection before anything is saved.
 - **CSV export** of vitals, the dose log (including missed doses), the medication
   list, symptoms, activities, mood, water and journal notes, in the user's time zone.
 - **Units**: metric or imperial, and mg/dL or mmol/L for glucose, per user.
@@ -80,7 +86,7 @@ classes with no Spring dependencies, so they are easy to test:
 | `AdherenceCalculator`    | Taken / skipped / missed counts and adherence %                 |
 | `GoalProgressCalculator` | Progress %, achieved and on-track for each goal type            |
 | `TrendAggregator`        | Daily averages for charts, grouped in the user's time zone      |
-| `CsvWriter`              | RFC 4180 CSV with protection against spreadsheet formulas       |
+| `CsvWriter`, `CsvReader` | RFC 4180 CSV with protection against spreadsheet formulas       |
 
 Authentication is stateless: `POST /api/auth/login` returns a signed JWT that the web
 app keeps in `localStorage` and sends as `Authorization: Bearer …`. Every query is
@@ -204,6 +210,10 @@ Dates are `YYYY-MM-DD` in the user's time zone; instants are ISO 8601 in UTC.
 | `GET/POST /api/water`, `GET /api/water/daily`  | Today's water (or `?date=`), daily totals    |
 | `GET/POST /api/journal?q=…`                    | Journal notes, searchable                    |
 | `GET/POST /api/goals`, `POST /api/goals/{id}/archive` | Goals with live progress              |
+| `GET /api/symptoms/tags`                       | Tags in use, most used first (`?tag=` filters the list) |
+| `GET /api/vitals/weekly-change`                | Last 7 days against the 7 days before        |
+| `POST /api/import/vitals?dryRun=…`             | Import readings from a CSV upload (`file`)   |
+| `GET /api/report?from=…&to=…`                  | Everything for the printable doctor report   |
 | `GET /api/export/{dataset}.csv`                | `vitals`, `doses`, `medications`, `symptoms`, `activities`, `mood`, `water`, `journal` |
 
 Errors share one shape:
@@ -219,7 +229,7 @@ api/
     security/      JWT service and filter
     user/          registration, login, profile
     vital/ range/ medication/ symptom/ activity/ goal/ export/
-    mood/ water/ journal/
+    mood/ water/ journal/ importing/ report/
     seed/          demo data
   src/main/resources/db/migration/   Flyway migrations
 web/
