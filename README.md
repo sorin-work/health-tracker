@@ -19,8 +19,12 @@ exports everything as CSV so it can be shared with a doctor.
   uses a stricter range when fasting. Users can replace the default bounds with the
   targets their doctor gave them; the critical limits always stay.
 - **Medications**: name, dose, instructions, times of day, start and end dates, or
-  "as needed". A daily schedule where each dose is marked taken or skipped (and can
-  be undone). Doses with nothing logged count as missed once the day is over.
+  "as needed". Schedules can be every day, every N days (counted from the start date)
+  or on chosen days of the week. Each dose is marked taken or skipped (and can be
+  undone); doses with nothing logged count as missed once the day is over.
+- **Supply and refills**: optionally track how many tablets (or puffs, ...) are left.
+  Taking a dose counts the supply down, a refill adds a new pack, and the app works
+  out how many days the supply lasts and warns on the dashboard before it runs out.
 - **Adherence**: taken / (taken + skipped + missed) for any period, overall, per
   medication and per day.
 - **Symptoms**: free-text name (with suggestions from earlier entries), severity
@@ -38,8 +42,10 @@ exports everything as CSV so it can be shared with a doctor.
   with progress computed from the logged data.
 - **CSV export** of vitals, the dose log (including missed doses), the medication
   list, symptoms, activities, mood, water and journal notes, in the user's time zone.
-- **Dashboard** with the latest reading of each vital, today's doses, 30-day
-  adherence, recently flagged readings and goal progress.
+- **Units**: metric or imperial, and mg/dL or mmol/L for glucose, per user.
+- **Dashboard** with the latest reading of each vital and its change on the week
+  before, today's doses, 30-day adherence, recently flagged readings, what is coming
+  up (doses still due, refills, goal dates), water, mood and goal progress.
 
 ## Stack
 
@@ -70,6 +76,7 @@ classes with no Spring dependencies, so they are easy to test:
 | ------------------------ | --------------------------------------------------------------- |
 | `RangeFlagger`           | Classifies a reading against default or custom reference ranges |
 | `DoseSchedule`           | Expands medication schedules into dose slots and their status   |
+| `SupplyEstimator`        | Days of supply left at the current schedule, low-supply check   |
 | `AdherenceCalculator`    | Taken / skipped / missed counts and adherence %                 |
 | `GoalProgressCalculator` | Progress %, achieved and on-track for each goal type            |
 | `TrendAggregator`        | Daily averages for charts, grouped in the user's time zone      |
@@ -179,13 +186,15 @@ Dates are `YYYY-MM-DD` in the user's time zone; instants are ISO 8601 in UTC.
 | Method & path                                  | Purpose                                      |
 | ---------------------------------------------- | -------------------------------------------- |
 | `POST /api/auth/register`, `POST /api/auth/login` | Create an account / sign in, returns a token |
-| `GET/PUT /api/me`                              | Profile (name, time zone)                    |
+| `GET/PUT /api/me`                              | Profile (name, time zone, units)             |
 | `GET/POST /api/vitals`, `PUT/DELETE /api/vitals/{id}` | Readings; filter by `type`, `from`, `to`, `flagged` |
 | `GET /api/vitals/summary`                      | Latest reading and 30-day stats per type     |
 | `GET /api/vitals/trend?type=…`                 | Daily averages for charts                    |
 | `GET /api/ranges`, `PUT/DELETE /api/ranges/{metric}` | Reference ranges, custom bounds, reset |
 | `GET/POST /api/medications`, `PUT/DELETE /api/medications/{id}` | Medications            |
 | `POST /api/medications/{id}/archive`           | Stop a medication, keeping its history       |
+| `POST /api/medications/{id}/refill`            | Add a new pack to the tracked supply         |
+| `GET /api/medications/low-supply`              | Active medications that are running out      |
 | `POST /api/medications/{id}/doses`             | Log a dose as taken or skipped               |
 | `GET /api/doses?date=…`, `DELETE /api/doses/{logId}` | A day's schedule / undo a logged dose  |
 | `GET /api/doses/adherence?from=…&to=…`         | Adherence overall, per medication, per day   |
@@ -225,8 +234,11 @@ docker-compose.yml
 
 ## Assumptions and limits
 
-- Units are metric (kg, mg/dL, mmHg, hours). There is no unit conversion yet.
-- Medication schedules are daily at fixed times; weekly or every-other-day schedules
-  are not supported. Times are in the user's time zone, set in Settings.
+- Everything is stored in metric units (kg, mg/dL, mmHg, km, ml). Settings switches the
+  display and the forms to imperial (lb, mi, fl oz) and glucose to mmol/L; blood
+  pressure, heart rate and sleep have no unit choice. Imports are always metric.
+- Medication times are in the user's time zone, set in Settings. A schedule is one set
+  of times; "two tablets in the morning, one at night" is two medications or one with
+  a dose quantity of 1 and two times.
 - One user per account; there is no sharing or caregiver access. Export the CSV
   files to share data.
