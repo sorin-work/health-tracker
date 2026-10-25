@@ -27,11 +27,17 @@ exports everything as CSV so it can be shared with a doctor.
   1-10, duration and notes, plotted over time.
 - **Activity**: walks, runs, cycling, swims, strength, yoga and more, with duration,
   distance, steps and calories. Weekly active-minute totals.
+- **Mood**: a quick check-in (1-5) with an optional energy level and note, a daily
+  chart and a 7-day strip on the dashboard.
+- **Water**: one-tap glasses (250 / 500 ml), a daily total against a target and a
+  per-day chart.
+- **Journal**: dated notes with an optional title and full-text search, e.g. how a new
+  medication is going or questions for the next appointment.
 - **Goals**: target weight (with an optional target date and an on-track check),
-  daily steps, weekly active minutes, weekly workouts and nightly sleep, with
-  progress computed from the logged data.
+  daily steps, weekly active minutes, weekly workouts, nightly sleep and daily water,
+  with progress computed from the logged data.
 - **CSV export** of vitals, the dose log (including missed doses), the medication
-  list, symptoms and activities, in the user's time zone.
+  list, symptoms, activities, mood, water and journal notes, in the user's time zone.
 - **Dashboard** with the latest reading of each vital, today's doses, 30-day
   adherence, recently flagged readings and goal progress.
 
@@ -56,7 +62,7 @@ The browser only talks to the web container; nginx serves the built React app an
 forwards `/api` to the API. In development, Vite's dev server does the same proxying.
 
 The API is layered per feature (`vital`, `medication`, `symptom`, `activity`, `goal`,
-`range`, `export`, `user`): a controller with request/response DTOs, a service with
+`mood`, `water`, `journal`, `range`, `export`, `user`): a controller with request/response DTOs, a service with
 the business rules and a Spring Data repository. The rules that matter most are plain
 classes with no Spring dependencies, so they are easy to test:
 
@@ -88,7 +94,8 @@ Then open http://localhost:5176 and sign in with the demo account:
 On first start the API runs the Flyway migrations and, because `SEED_DEMO=true`,
 creates the demo user with about a year of data: daily weight and blood pressure,
 glucose and sleep, four medications with a realistic dose log (including some missed
-and skipped doses), symptoms, workouts and a few goals. Set `SEED_DEMO=false` for an
+and skipped doses), symptoms, workouts, mood check-ins, water, a few journal notes
+and some goals. Set `SEED_DEMO=false` for an
 empty database.
 
 | Service | Host port | URL                                       | Notes                                |
@@ -184,8 +191,11 @@ Dates are `YYYY-MM-DD` in the user's time zone; instants are ISO 8601 in UTC.
 | `GET /api/doses/adherence?from=…&to=…`         | Adherence overall, per medication, per day   |
 | `GET/POST /api/symptoms`, `GET /api/symptoms/names` | Symptom log and name suggestions        |
 | `GET/POST /api/activities`, `GET /api/activities/weekly` | Activity log and weekly totals     |
+| `GET/POST /api/mood`, `GET /api/mood/daily`    | Mood check-ins and daily averages            |
+| `GET/POST /api/water`, `GET /api/water/daily`  | Today's water (or `?date=`), daily totals    |
+| `GET/POST /api/journal?q=…`                    | Journal notes, searchable                    |
 | `GET/POST /api/goals`, `POST /api/goals/{id}/archive` | Goals with live progress              |
-| `GET /api/export/{dataset}.csv`                | `vitals`, `doses`, `medications`, `symptoms`, `activities` |
+| `GET /api/export/{dataset}.csv`                | `vitals`, `doses`, `medications`, `symptoms`, `activities`, `mood`, `water`, `journal` |
 
 Errors share one shape:
 `{ "status": 400, "error": "validation_failed", "message": "…", "fields": { "value": "…" } }`.
@@ -200,6 +210,7 @@ api/
     security/      JWT service and filter
     user/          registration, login, profile
     vital/ range/ medication/ symptom/ activity/ goal/ export/
+    mood/ water/ journal/
     seed/          demo data
   src/main/resources/db/migration/   Flyway migrations
 web/
