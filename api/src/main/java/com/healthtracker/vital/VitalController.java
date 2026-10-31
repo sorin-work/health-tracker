@@ -6,6 +6,7 @@ import com.healthtracker.vital.dto.TrendPoint;
 import com.healthtracker.vital.dto.VitalReadingRequest;
 import com.healthtracker.vital.dto.VitalReadingResponse;
 import com.healthtracker.vital.dto.VitalSummary;
+import com.healthtracker.vital.dto.WeeklyChange;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
@@ -48,6 +49,12 @@ public class VitalController {
     @GetMapping("/summary")
     public List<VitalSummary> summary(@AuthenticationPrincipal AuthUser user) {
         return vitalService.summary(user.id());
+    }
+
+    /** Last 7 days against the 7 days before, per vital type. */
+    @GetMapping("/weekly-change")
+    public List<WeeklyChange> weeklyChange(@AuthenticationPrincipal AuthUser user) {
+        return vitalService.weeklyChange(user.id());
     }
 
     @GetMapping("/trend")

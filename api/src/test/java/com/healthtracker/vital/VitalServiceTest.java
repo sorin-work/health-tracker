@@ -17,6 +17,7 @@ import com.healthtracker.user.UserService;
 import com.healthtracker.vital.dto.TrendPoint;
 import com.healthtracker.vital.dto.VitalReadingRequest;
 import com.healthtracker.vital.dto.VitalReadingResponse;
+import com.healthtracker.vital.dto.WeeklyChange;
 import com.healthtracker.vital.dto.VitalSummary;
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -161,5 +162,33 @@ class VitalServiceTest {
         VitalSummary weight = summary.stream().filter(s -> s.type() == VitalType.WEIGHT).findFirst().orElseThrow();
         assertThat(weight.latest()).isNull();
         assertThat(weight.average30d()).isNull();
+    }
+
+    @Test
+    void comparesTheLastSevenDaysWithTheWeekBefore() {
+        when(userService.zoneOf(1L)).thenReturn(ZoneOffset.UTC);
+        // NOW is 2026-02-10: this week is 02-04..02-10, the week before 01-28..02-03.
+        Instant thisWeek = Instant.parse("2026-02-04T00:00:00Z");
+        Instant lastWeek = Instant.parse("2026-01-28T00:00:00Z");
+        Instant tomorrow = Instant.parse("2026-02-11T00:00:00Z");
+        when(repository.findInRange(eq(1L), any(), any(), any())).thenReturn(List.of());
+        when(repository.findInRange(1L, VitalType.WEIGHT, thisWeek, tomorrow)).thenReturn(List.of(
+                reading(1, VitalType.WEIGHT, "81.0", null, NOW), reading(2, VitalType.WEIGHT, "81.4", null, NOW)));
+        when(repository.findInRange(1L, VitalType.WEIGHT, lastWeek, thisWeek)).thenReturn(List.of(
+                reading(3, VitalType.WEIGHT, "82.0", null, NOW)));
+        when(repository.findInRange(1L, VitalType.BLOOD_PRESSURE, thisWeek, tomorrow)).thenReturn(List.of(
+                reading(4, VitalType.BLOOD_PRESSURE, "130", "85", NOW)));
+
+        List<WeeklyChange> changes = service.weeklyChange(1L);
+
+        WeeklyChange weight = changes.stream().filter(c -> c.type() == VitalType.WEIGHT).findFirst().orElseThrow();
+        assertThat(weight.count()).isEqualTo(2);
+        assertThat(weight.average()).isEqualByComparingTo("81.2");
+        assertThat(weight.previousAverage()).isEqualByComparingTo("82.0");
+        assertThat(weight.change()).isEqualByComparingTo("-0.8");
+        WeeklyChange bp = changes.stream().filter(c -> c.type() == VitalType.BLOOD_PRESSURE).findFirst().orElseThrow();
+        assertThat(bp.averageSecondary()).isEqualByComparingTo("85.0");
+        assertThat(bp.change()).isNull();
+        assertThat(changes).hasSize(VitalType.values().length);
     }
 }

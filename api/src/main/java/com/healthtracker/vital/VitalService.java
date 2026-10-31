@@ -11,6 +11,8 @@ import com.healthtracker.vital.dto.TrendPoint;
 import com.healthtracker.vital.dto.VitalReadingRequest;
 import com.healthtracker.vital.dto.VitalReadingResponse;
 import com.healthtracker.vital.dto.VitalSummary;
+import com.healthtracker.vital.dto.WeeklyChange;
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -19,6 +21,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -119,6 +122,36 @@ public class VitalService {
                     flagged));
         }
         return result;
+    }
+
+    /** This week (the last 7 days, today included) against the 7 days before, per vital type. */
+    @Transactional(readOnly = true)
+    public List<WeeklyChange> weeklyChange(Long userId) {
+        ZoneId zone = userService.zoneOf(userId);
+        LocalDate today = LocalDate.now(clock.withZone(zone));
+        DateRange thisWeek = DateRange.of(today.minusDays(6), today, zone);
+        DateRange lastWeek = DateRange.of(today.minusDays(13), today.minusDays(7), zone);
+        List<WeeklyChange> result = new ArrayList<>();
+        for (VitalType type : VitalType.values()) {
+            List<VitalReading> now = readings.findInRange(userId, type, thisWeek.start(), thisWeek.end());
+            List<VitalReading> before = readings.findInRange(userId, type, lastWeek.start(), lastWeek.end());
+            BigDecimal avg = averageOf(now, VitalReading::getValue);
+            BigDecimal avgSecondary = averageOf(now, VitalReading::getSecondaryValue);
+            BigDecimal prev = averageOf(before, VitalReading::getValue);
+            BigDecimal prevSecondary = averageOf(before, VitalReading::getSecondaryValue);
+            result.add(new WeeklyChange(
+                    type, now.size(), avg, avgSecondary, before.size(), prev, prevSecondary,
+                    difference(avg, prev), difference(avgSecondary, prevSecondary)));
+        }
+        return result;
+    }
+
+    private static BigDecimal averageOf(List<VitalReading> list, Function<VitalReading, BigDecimal> value) {
+        return TrendAggregator.average(list.stream().map(value).filter(Objects::nonNull).toList());
+    }
+
+    private static BigDecimal difference(BigDecimal now, BigDecimal before) {
+        return now == null || before == null ? null : now.subtract(before);
     }
 
     private VitalReading find(Long userId, Long id) {
