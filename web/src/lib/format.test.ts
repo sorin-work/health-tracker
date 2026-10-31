@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   describeSchedule,
   describeSupply,
+  describeWeeklyChange,
   formatMinutes,
   formatNumber,
   formatReading,
@@ -77,5 +78,20 @@ describe('format', () => {
     expect(describeSupply({ supply: 2.5, daysOfSupply: 1, lowSupply: true })).toBe('2.5 left · about 1 day');
     expect(describeSupply({ supply: 0, lowSupply: true })).toBe('0 left · refill soon');
     expect(describeSupply({ lowSupply: false })).toBe('');
+  });
+
+  it('describes the change on the week before', () => {
+    const base = { count: 5, previousCount: 6 };
+
+    expect(describeWeeklyChange({ ...base, type: 'WEIGHT', change: -0.8 })?.text).toBe('▼ 0.8 kg');
+    expect(
+      describeWeeklyChange({ ...base, type: 'WEIGHT', change: -0.8 }, { unitSystem: 'IMPERIAL', glucoseUnit: 'MG_DL' })
+        ?.text,
+    ).toBe('▼ 1.8 lb');
+    expect(describeWeeklyChange({ ...base, type: 'BLOOD_PRESSURE', change: 4.2, changeSecondary: -1.6 })?.text).toBe(
+      '▲ 4/2 mmHg',
+    );
+    expect(describeWeeklyChange({ ...base, type: 'HEART_RATE', change: 0.2 })?.direction).toBe('same');
+    expect(describeWeeklyChange({ ...base, type: 'SLEEP' })).toBeNull();
   });
 });

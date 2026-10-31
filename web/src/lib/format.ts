@@ -1,7 +1,7 @@
 import type { ActivityType } from '../api/activities';
 import type { GoalType } from '../api/goals';
 import type { DayOfWeek, Medication } from '../api/medications';
-import type { Flag, GlucoseContext, VitalReading, VitalType } from '../api/vitals';
+import type { Flag, GlucoseContext, VitalReading, VitalType, WeeklyChange } from '../api/vitals';
 import {
   goalToDisplay,
   goalUnit,
@@ -83,6 +83,34 @@ export function formatReading(
 /** `750 ml` or `25 fl oz`. */
 export function formatWater(ml: number, prefs: UnitPrefs = METRIC): string {
   return `${formatNumber(waterToDisplay(ml, prefs))} ${waterUnit(prefs)}`;
+}
+
+/**
+ * "▼ 0.8 kg" / "▲ 4/2 mmHg" / "no change" against the week before, in the user's units, or null when
+ * there is nothing to compare. Converting the difference is fine because the conversions are linear.
+ */
+export function describeWeeklyChange(
+  c: WeeklyChange,
+  prefs: UnitPrefs = METRIC,
+): { text: string; label: string; direction: 'up' | 'down' | 'same' } | null {
+  if (c.change === undefined || c.change === null) return null;
+  const decimals = vitalDecimals(c.type, prefs);
+  const main = vitalToDisplay(c.type, c.change, prefs);
+  const step = decimals > 0 ? 0.05 : 0.5;
+  const unit = vitalUnit(c.type, prefs);
+  if (Math.abs(main) < step && (c.changeSecondary === undefined || Math.abs(c.changeSecondary ?? 0) < 0.5)) {
+    return { text: 'no change', label: 'About the same as the week before', direction: 'same' };
+  }
+  const direction = main > 0 ? 'up' : 'down';
+  const amount =
+    c.type === 'BLOOD_PRESSURE' && c.changeSecondary !== undefined && c.changeSecondary !== null
+      ? `${formatNumber(Math.abs(main), 0)}/${formatNumber(Math.abs(c.changeSecondary), 0)}`
+      : formatNumber(Math.abs(main), decimals);
+  return {
+    text: `${direction === 'up' ? '▲' : '▼'} ${amount} ${unit}`,
+    label: `${direction === 'up' ? 'Up' : 'Down'} ${amount} ${unit} on the week before`,
+    direction,
+  };
 }
 
 /** 95 -> `1 h 35 min`, 40 -> `40 min` */

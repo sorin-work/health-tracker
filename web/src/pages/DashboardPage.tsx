@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import { listGoals } from '../api/goals';
 import { moodDaily, type MoodDay } from '../api/mood';
 import { adherence, dosesForDay, lowSupplyMedications } from '../api/medications';
-import { listVitals, vitalSummary, type VitalSummary } from '../api/vitals';
+import { listVitals, vitalSummary, weeklyChange, type VitalSummary, type WeeklyChange } from '../api/vitals';
 import { useUnitPrefs, useUser } from '../auth/AuthContext';
 import { DoseList } from '../components/DoseList';
 import { EmptyState } from '../components/EmptyState';
@@ -18,6 +18,7 @@ import { addDays, formatDateTime, formatShortDate, formatWeekday, presetRange, t
 import {
   adherenceTone,
   describeSupply,
+  describeWeeklyChange,
   formatNumber,
   formatReading,
   formatVitalValue,
@@ -37,6 +38,7 @@ export function DashboardPage() {
   const prefs = useUnitPrefs();
   const last30 = presetRange('30d');
   const summary = useQuery({ queryKey: ['vitals', 'summary'], queryFn: vitalSummary });
+  const changes = useQuery({ queryKey: ['vitals', 'weekly-change'], queryFn: weeklyChange });
   const doses = useQuery({ queryKey: ['doses', today()], queryFn: () => dosesForDay(today()) });
   const stats = useQuery({
     queryKey: ['doses', 'adherence', last30.from, last30.to],
@@ -87,7 +89,9 @@ export function DashboardPage() {
 
       <ErrorMessage error={summary.error} />
       <div className="vital-cards">
-        {summary.data?.map((s) => <VitalCard key={s.type} summary={s} />)}
+        {summary.data?.map((s) => (
+          <VitalCard key={s.type} summary={s} change={changes.data?.find((c) => c.type === s.type)} />
+        ))}
       </div>
 
       <div className="grid grid--2">
@@ -183,9 +187,10 @@ export function DashboardPage() {
   );
 }
 
-function VitalCard({ summary }: { summary: VitalSummary }) {
+function VitalCard({ summary, change }: { summary: VitalSummary; change?: WeeklyChange }) {
   const prefs = useUnitPrefs();
   const meta = VITAL_META[summary.type];
+  const weekly = change ? describeWeeklyChange(change, prefs) : null;
   const latest = summary.latest;
   return (
     <Link to={`/vitals?type=${summary.type}`} className="vital-card">
@@ -204,6 +209,13 @@ function VitalCard({ summary }: { summary: VitalSummary }) {
             <div className="muted small">
               30-day avg {formatVitalValue(summary.type, summary.average30d, summary.averageSecondary30d, prefs)}
               {summary.flagged30d > 0 && ` · ${summary.flagged30d} flagged`}
+            </div>
+          )}
+          {weekly && (
+            <div className={`trend-change trend-change--${weekly.direction} small`} title={weekly.label}>
+              <span aria-hidden>{weekly.text}</span>
+              <span className="sr-only">{weekly.label}</span>
+              <span className="muted"> vs last week</span>
             </div>
           )}
         </>

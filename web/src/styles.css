@@ -1085,6 +1085,17 @@ input[type='range'] {
   }
 }
 
+/* Week-over-week change on the dashboard. Up or down is not good or bad in itself, so it stays neutral. */
+
+.trend-change {
+  margin-top: 0.15rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.trend-change--same {
+  color: var(--text-muted);
+}
+
 /* Medication schedules */
 
 .schedule {

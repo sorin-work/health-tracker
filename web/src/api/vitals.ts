@@ -45,6 +45,19 @@ export interface VitalSummary {
   flagged30d: number;
 }
 
+export interface WeeklyChange {
+  type: VitalType;
+  count: number;
+  average?: number;
+  averageSecondary?: number;
+  previousCount: number;
+  previousAverage?: number;
+  previousAverageSecondary?: number;
+  /** This week minus the week before; absent when either week has no readings. */
+  change?: number;
+  changeSecondary?: number;
+}
+
 export interface VitalFilters {
   type?: VitalType;
   from?: string;
@@ -61,6 +74,8 @@ export const vitalTrend = (type: VitalType, from?: string, to?: string) =>
   api.get<TrendPoint[]>(`/vitals/trend${toQuery({ type, from, to })}`);
 
 export const vitalSummary = () => api.get<VitalSummary[]>('/vitals/summary');
+
+export const weeklyChange = () => api.get<WeeklyChange[]>('/vitals/weekly-change');
 
 export const createVital = (payload: VitalPayload) => api.post<VitalReading>('/vitals', payload);
 
