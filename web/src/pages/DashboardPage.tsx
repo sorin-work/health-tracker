@@ -12,6 +12,7 @@ import { FlagBadge } from '../components/FlagBadge';
 import { GoalCard } from '../components/GoalCard';
 import { AlertIcon } from '../components/icons';
 import { ProgressBar } from '../components/ProgressBar';
+import { RemindersCard } from '../components/RemindersCard';
 import { DEFAULT_WATER_TARGET_ML, WaterCard } from '../components/WaterCard';
 import { vitalUnit } from '../lib/units';
 import { addDays, formatDateTime, formatShortDate, formatWeekday, presetRange, today } from '../lib/dates';
@@ -144,7 +145,16 @@ export function DashboardPage() {
         </section>
       </div>
 
-      <div className="grid grid--2">
+      <div className="grid grid--3">
+        <section className="card">
+          <div className="card__header">
+            <h2>Coming up</h2>
+          </div>
+          {doses.data && goals.data && lowSupply.data && (
+            <RemindersCard doses={doses.data} lowSupply={lowSupply.data} goals={goals.data} />
+          )}
+        </section>
+
         <section className="card">
           <div className="card__header">
             <h2>Water today</h2>
