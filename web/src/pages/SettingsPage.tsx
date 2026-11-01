@@ -7,6 +7,7 @@ import { ErrorMessage } from '../components/ErrorMessage';
 import { Field } from '../components/Field';
 import { PageHeader } from '../components/PageHeader';
 import { formatNumber } from '../lib/format';
+import { getTheme, setTheme, type Theme } from '../lib/theme';
 import { vitalFromDisplay, vitalToDisplay, vitalUnit, type GlucoseUnit, type UnitSystem } from '../lib/units';
 
 function timezones(): string[] {
@@ -23,7 +24,10 @@ export function SettingsPage() {
     <>
       <PageHeader title="Settings" />
       <div className="grid grid--2">
-        <ProfileForm />
+        <div className="stack">
+          <ProfileForm />
+          <AppearanceCard />
+        </div>
         <RangesCard />
       </div>
     </>
@@ -109,6 +113,40 @@ function ProfileForm() {
     </section>
   );
 }
+
+function AppearanceCard() {
+  const [theme, setThemeState] = useState<Theme>(getTheme);
+  const choose = (next: Theme) => {
+    setTheme(next);
+    setThemeState(next);
+  };
+  return (
+    <section className="card">
+      <h2>Appearance</h2>
+      <div className="segmented" role="radiogroup" aria-label="Theme">
+        {THEMES.map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            role="radio"
+            aria-checked={theme === t.key}
+            className={theme === t.key ? 'active' : undefined}
+            onClick={() => choose(t.key)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <p className="muted small">Saved in this browser only.</p>
+    </section>
+  );
+}
+
+const THEMES: { key: Theme; label: string }[] = [
+  { key: 'system', label: 'Match system' },
+  { key: 'light', label: 'Light' },
+  { key: 'dark', label: 'Dark' },
+];
 
 function RangesCard() {
   const ranges = useQuery({ queryKey: ['ranges'], queryFn: listRanges });
