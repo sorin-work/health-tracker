@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -71,7 +72,21 @@ public class VitalService {
     @Transactional(readOnly = true)
     public PageResponse<VitalReadingResponse> list(
             Long userId, VitalType type, LocalDate from, LocalDate to, boolean flaggedOnly, int page, int size) {
-        return PageResponse.of(readings(userId, type, from, to, flaggedOnly), page, size);
+        if (flaggedOnly) {
+            // Flags depend on the user's ranges, so this filter has to run in memory.
+            return PageResponse.of(readings(userId, type, from, to, true), page, size);
+        }
+        // A year of readings is a few thousand rows; let the database count and slice them.
+        DateRange range = DateRange.of(from, to, userService.zoneOf(userId));
+        RangeFlagger flagger = rangeService.flaggerFor(userId);
+        int safeSize = Math.max(1, Math.min(size, PageResponse.MAX_SIZE));
+        int safePage = Math.max(0, page);
+        Page<VitalReading> result = readings.pageInRange(userId, type, range.start(), range.end(), safePage, safeSize);
+        return new PageResponse<>(
+                result.getContent().stream().map(r -> toResponse(r, flagger)).toList(),
+                safePage,
+                safeSize,
+                result.getTotalElements());
     }
 
     /** Readings in a date range, newest first, with their flags. */

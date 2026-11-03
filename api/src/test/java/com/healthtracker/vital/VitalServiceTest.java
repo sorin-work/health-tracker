@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -28,6 +29,9 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -120,10 +124,27 @@ class VitalServiceTest {
         when(userService.zoneOf(1L)).thenReturn(BERLIN);
         when(rangeService.flaggerFor(1L)).thenReturn(RangeFlagger.withDefaults());
 
+        when(repository.pageInRange(eq(1L), isNull(), any(), any(), eq(0), eq(50))).thenReturn(Page.empty());
+
         service.list(1L, null, LocalDate.of(2026, 2, 1), LocalDate.of(2026, 2, 7), false, 0, 50);
 
-        verify(repository).findInRange(
-                1L, null, Instant.parse("2026-01-31T23:00:00Z"), Instant.parse("2026-02-07T23:00:00Z"));
+        verify(repository).pageInRange(
+                1L, null, Instant.parse("2026-01-31T23:00:00Z"), Instant.parse("2026-02-07T23:00:00Z"), 0, 50);
+    }
+
+    @Test
+    void unfilteredListIsPagedByTheDatabase() {
+        when(userService.zoneOf(1L)).thenReturn(ZoneOffset.UTC);
+        when(rangeService.flaggerFor(1L)).thenReturn(RangeFlagger.withDefaults());
+        when(repository.pageInRange(eq(1L), eq(VitalType.HEART_RATE), any(), any(), eq(2), eq(25))).thenReturn(
+                new PageImpl<>(List.of(reading(9, VitalType.HEART_RATE, "64", null, NOW)), PageRequest.of(2, 25), 51));
+
+        PageResponse<VitalReadingResponse> page = service.list(1L, VitalType.HEART_RATE, null, null, false, 2, 25);
+
+        assertThat(page.total()).isEqualTo(51);
+        assertThat(page.page()).isEqualTo(2);
+        assertThat(page.items()).singleElement().satisfies(r -> assertThat(r.flag()).isEqualTo(Flag.NORMAL));
+        verify(repository, never()).findInRange(any(), any(), any(), any());
     }
 
     @Test

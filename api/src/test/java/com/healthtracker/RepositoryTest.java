@@ -91,6 +91,23 @@ class RepositoryTest {
     }
 
     @Test
+    void pagesReadingsNewestFirst() {
+        for (int day = 1; day <= 5; day++) {
+            reading(userId, VitalType.WEIGHT, "8" + day, "2026-01-0" + day + "T07:00:00Z");
+        }
+        reading(userId, VitalType.HEART_RATE, "60", "2026-01-03T07:00:00Z");
+
+        var page = readings.pageInRange(userId, VitalType.WEIGHT,
+                Instant.parse("2026-01-01T00:00:00Z"), Instant.parse("2026-02-01T00:00:00Z"), 1, 2);
+        var all = readings.pageInRange(userId, null,
+                Instant.parse("2026-01-01T00:00:00Z"), Instant.parse("2026-02-01T00:00:00Z"), 0, 50);
+
+        assertThat(page.getTotalElements()).isEqualTo(5);
+        assertThat(page.getContent()).extracting(r -> r.getValue().intValue()).containsExactly(83, 82);
+        assertThat(all.getTotalElements()).isEqualTo(6);
+    }
+
+    @Test
     void symptomNamesAreOrderedByFrequency() {
         for (String name : List.of("Headache", "Fatigue", "Headache", "Nausea", "Headache", "Fatigue")) {
             Symptom s = new Symptom(userId, Instant.EPOCH);
