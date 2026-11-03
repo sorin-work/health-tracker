@@ -1112,6 +1112,12 @@ input[type='range'] {
   animation: spin 0.8s linear infinite;
 }
 
+.page-loading {
+  display: grid;
+  place-items: center;
+  min-height: 40vh;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);

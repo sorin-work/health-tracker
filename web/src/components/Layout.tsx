@@ -1,4 +1,4 @@
-import { useState, type ComponentType, type SVGProps } from 'react';
+import { Suspense, useState, type ComponentType, type SVGProps } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
 import { useAuth, useUser } from '../auth/AuthContext';
 import { Disclaimer } from './Disclaimer';
@@ -96,7 +96,16 @@ export function Layout() {
       </aside>
 
       <main className="content" id="main" tabIndex={-1}>
-        <Outlet />
+        <Suspense
+          fallback={
+            <div className="page-loading" role="status">
+              <span className="spinner" aria-hidden />
+              <span className="sr-only">Loading…</span>
+            </div>
+          }
+        >
+          <Outlet />
+        </Suspense>
         <Disclaimer />
       </main>
     </div>

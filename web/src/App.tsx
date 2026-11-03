@@ -1,21 +1,24 @@
+import { lazy } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
 import { RedirectIfAuthenticated, RequireAuth } from './auth/guards';
 import { Layout } from './components/Layout';
-import { ActivityPage } from './pages/ActivityPage';
 import { DashboardPage } from './pages/DashboardPage';
-import { ExportPage } from './pages/ExportPage';
-import { GoalsPage } from './pages/GoalsPage';
-import { ImportPage } from './pages/ImportPage';
-import { JournalPage } from './pages/JournalPage';
 import { LoginPage } from './pages/LoginPage';
-import { MedicationsPage } from './pages/MedicationsPage';
-import { MoodPage } from './pages/MoodPage';
 import { RegisterPage } from './pages/RegisterPage';
-import { ReportPage } from './pages/ReportPage';
-import { SettingsPage } from './pages/SettingsPage';
-import { SymptomsPage } from './pages/SymptomsPage';
-import { VitalsPage } from './pages/VitalsPage';
-import { WaterPage } from './pages/WaterPage';
+
+// Everything behind the dashboard is loaded on first visit, so signing in does not wait for it.
+const ActivityPage = lazy(() => import('./pages/ActivityPage').then((m) => ({ default: m.ActivityPage })));
+const ExportPage = lazy(() => import('./pages/ExportPage').then((m) => ({ default: m.ExportPage })));
+const GoalsPage = lazy(() => import('./pages/GoalsPage').then((m) => ({ default: m.GoalsPage })));
+const ImportPage = lazy(() => import('./pages/ImportPage').then((m) => ({ default: m.ImportPage })));
+const JournalPage = lazy(() => import('./pages/JournalPage').then((m) => ({ default: m.JournalPage })));
+const MedicationsPage = lazy(() => import('./pages/MedicationsPage').then((m) => ({ default: m.MedicationsPage })));
+const MoodPage = lazy(() => import('./pages/MoodPage').then((m) => ({ default: m.MoodPage })));
+const ReportPage = lazy(() => import('./pages/ReportPage').then((m) => ({ default: m.ReportPage })));
+const SettingsPage = lazy(() => import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage })));
+const SymptomsPage = lazy(() => import('./pages/SymptomsPage').then((m) => ({ default: m.SymptomsPage })));
+const VitalsPage = lazy(() => import('./pages/VitalsPage').then((m) => ({ default: m.VitalsPage })));
+const WaterPage = lazy(() => import('./pages/WaterPage').then((m) => ({ default: m.WaterPage })));
 
 export function App() {
   return (
