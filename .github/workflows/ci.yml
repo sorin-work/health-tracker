@@ -22,6 +22,13 @@ jobs:
 
       - run: ./mvnw -B verify
 
+      - name: Keep the test reports when something fails
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-test-reports
+          path: api/target/surefire-reports/
+
   web:
     runs-on: ubuntu-latest
     defaults:
