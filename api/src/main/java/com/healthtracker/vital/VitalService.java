@@ -14,8 +14,6 @@ import com.healthtracker.vital.dto.VitalSummary;
 import com.healthtracker.vital.dto.WeeklyChange;
 import java.math.BigDecimal;
 import java.time.Clock;
-import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -112,14 +110,16 @@ public class VitalService {
     @Transactional(readOnly = true)
     public List<VitalSummary> summary(Long userId) {
         RangeFlagger flagger = rangeService.flaggerFor(userId);
-        Instant now = clock.instant();
-        Instant since = now.minus(Duration.ofDays(30));
+        // The same 30 calendar days as the adherence figure next to it: today and the 29 days before.
+        ZoneId zone = userService.zoneOf(userId);
+        LocalDate today = LocalDate.now(clock.withZone(zone));
+        DateRange last30 = DateRange.of(today.minusDays(29), today, zone);
         List<VitalSummary> result = new ArrayList<>();
         for (VitalType type : VitalType.values()) {
             VitalReadingResponse latest = readings.findFirstByUserIdAndTypeOrderByMeasuredAtDesc(userId, type)
                     .map(r -> toResponse(r, flagger))
                     .orElse(null);
-            List<VitalReading> recent = readings.findInRange(userId, type, since, now.plusSeconds(1));
+            List<VitalReading> recent = readings.findInRange(userId, type, last30.start(), last30.end());
             int flagged = (int) recent.stream()
                     .map(r -> flagger.flag(r.getType(), r.getValue(), r.getSecondaryValue(), r.getGlucoseContext()))
                     .filter(TrendAggregator::isFlagged)

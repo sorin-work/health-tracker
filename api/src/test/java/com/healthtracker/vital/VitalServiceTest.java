@@ -163,6 +163,7 @@ class VitalServiceTest {
 
     @Test
     void summaryHasAnEntryForEveryType() {
+        when(userService.zoneOf(1L)).thenReturn(BERLIN);
         when(rangeService.flaggerFor(1L)).thenReturn(RangeFlagger.withDefaults());
         when(repository.findFirstByUserIdAndTypeOrderByMeasuredAtDesc(eq(1L), any())).thenReturn(Optional.empty());
         when(repository.findFirstByUserIdAndTypeOrderByMeasuredAtDesc(1L, VitalType.HEART_RATE))
@@ -183,6 +184,20 @@ class VitalServiceTest {
         VitalSummary weight = summary.stream().filter(s -> s.type() == VitalType.WEIGHT).findFirst().orElseThrow();
         assertThat(weight.latest()).isNull();
         assertThat(weight.average30d()).isNull();
+    }
+
+    @Test
+    void summaryCoversThirtyCalendarDaysInTheUsersZone() {
+        when(userService.zoneOf(1L)).thenReturn(BERLIN);
+        when(rangeService.flaggerFor(1L)).thenReturn(RangeFlagger.withDefaults());
+        when(repository.findFirstByUserIdAndTypeOrderByMeasuredAtDesc(eq(1L), any())).thenReturn(Optional.empty());
+        when(repository.findInRange(eq(1L), any(), any(), any())).thenReturn(List.of());
+
+        service.summary(1L);
+
+        // NOW is 2026-02-10 13:00 in Berlin: from the start of 2026-01-12 to the end of 2026-02-10.
+        verify(repository).findInRange(
+                1L, VitalType.WEIGHT, Instant.parse("2026-01-11T23:00:00Z"), Instant.parse("2026-02-10T23:00:00Z"));
     }
 
     @Test
