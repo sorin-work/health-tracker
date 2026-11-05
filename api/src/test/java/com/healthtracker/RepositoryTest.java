@@ -200,6 +200,22 @@ class RepositoryTest {
     }
 
     @Test
+    void journalSearchTreatsWildcardsLiterally() {
+        note(userId, "2026-07-01", null, "Took 100% of doses this week");
+        note(userId, "2026-07-02", null, "1000 steps only");
+        note(userId, "2026-07-03", null, "file_name.csv imported");
+        note(userId, "2026-07-04", null, "filename");
+        LocalDate from = LocalDate.of(2026, 7, 1);
+        LocalDate to = LocalDate.of(2026, 7, 31);
+
+        assertThat(journal.search(userId, from, to, JournalRepository.likePattern("100%")))
+                .extracting(JournalEntry::getBody)
+                .containsExactly("Took 100% of doses this week");
+        assertThat(journal.search(userId, from, to, JournalRepository.likePattern("file_"))).hasSize(1);
+        assertThat(journal.search(userId, from, to, JournalRepository.likePattern("%"))).hasSize(1);
+    }
+
+    @Test
     void symptomTagsAreOrderedByFrequency() {
         for (List<String> tags : List.of(List.of("stress", "coffee"), List.of("stress"), List.of("weather", "stress"))) {
             Symptom s = new Symptom(userId, Instant.EPOCH);
