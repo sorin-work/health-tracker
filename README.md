@@ -48,7 +48,10 @@ supply, and puts it all into a printable report (or CSV files) to share with a d
   row validation and duplicate detection before anything is saved.
 - **CSV export** of vitals, the dose log (including missed doses), the medication
   list, symptoms, activities, mood, water and journal notes, in the user's time zone.
-- **Units**: metric or imperial, and mg/dL or mmol/L for glucose, per user.
+- **Settings**: units (metric or imperial, and mg/dL or mmol/L for glucose), time zone,
+  reference ranges, and a light, dark or system theme.
+- **Accessible**: keyboard friendly with a skip link and visible focus, labelled
+  charts, reduced motion when the system asks for it.
 - **Dashboard** with the latest reading of each vital and its change on the week
   before, today's doses, 30-day adherence, recently flagged readings, what is coming
   up (doses still due, refills, goal dates), water, mood and goal progress.
@@ -179,10 +182,11 @@ Vite proxies `/api` to `http://localhost:8080`; set `API_URL` to point it elsewh
 cd api && ./mvnw test      # JUnit + Mockito, @WebMvcTest, H2 repository tests
 cd web && npm test         # Vitest + Testing Library
 cd web && npm run typecheck
+cd web && npm run lint     # ESLint, no warnings allowed
 ```
 
 Neither suite needs a running database. CI (`.github/workflows/ci.yml`) runs both,
-builds the web app and builds the Docker images.
+lints and builds the web app and builds the Docker images.
 
 ## API overview
 
