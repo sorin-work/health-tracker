@@ -3,6 +3,7 @@ package com.healthtracker.journal;
 import com.healthtracker.common.ApiException;
 import com.healthtracker.common.DateRange;
 import com.healthtracker.common.PageResponse;
+import com.healthtracker.common.Text;
 import com.healthtracker.journal.dto.JournalRequest;
 import com.healthtracker.journal.dto.JournalResponse;
 import com.healthtracker.user.UserService;
@@ -72,7 +73,7 @@ public class JournalService {
             throw ApiException.badRequest("Journal entries cannot be dated in the future");
         }
         entry.setEntryDate(request.entryDate());
-        entry.setTitle(request.title() == null || request.title().isBlank() ? null : request.title().trim());
+        entry.setTitle(Text.trimToNull(request.title()));
         entry.setBody(request.body().strip());
     }
 }

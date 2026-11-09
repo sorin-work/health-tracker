@@ -1,6 +1,7 @@
 package com.healthtracker.medication;
 
 import com.healthtracker.common.ApiException;
+import com.healthtracker.common.Text;
 import com.healthtracker.medication.dto.MedicationRequest;
 import com.healthtracker.medication.dto.MedicationResponse;
 import com.healthtracker.user.UserService;
@@ -120,8 +121,8 @@ public class MedicationService {
             throw ApiException.badRequest("Pick at least one day of the week");
         }
         medication.setName(request.name().trim());
-        medication.setDosage(trimToNull(request.dosage()));
-        medication.setInstructions(trimToNull(request.instructions()));
+        medication.setDosage(Text.trimToNull(request.dosage()));
+        medication.setInstructions(Text.trimToNull(request.instructions()));
         medication.setAsNeeded(request.asNeeded());
         medication.setTimes(request.asNeeded() ? List.of() : times);
         medication.setStartDate(request.startDate());
@@ -132,9 +133,5 @@ public class MedicationService {
         medication.setSupply(request.supply());
         medication.setDoseQuantity(request.doseQuantity() != null ? request.doseQuantity() : BigDecimal.ONE);
         medication.setRefillWarningDays(request.refillWarningDays() != null ? request.refillWarningDays() : 7);
-    }
-
-    private static String trimToNull(String s) {
-        return s == null || s.isBlank() ? null : s.trim();
     }
 }

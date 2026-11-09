@@ -2,6 +2,7 @@ package com.healthtracker.medication;
 
 import com.healthtracker.common.ApiException;
 import com.healthtracker.common.DateRange;
+import com.healthtracker.common.Text;
 import com.healthtracker.medication.dto.AdherenceResponse;
 import com.healthtracker.medication.dto.AdherenceResponse.DailyAdherence;
 import com.healthtracker.medication.dto.AdherenceResponse.MedicationAdherence;
@@ -80,7 +81,7 @@ public class DoseService {
         boolean isTaken = request.status() == DoseStatus.TAKEN;
         // Re-logging the same status must not count the dose twice.
         medication.adjustSupply(wasTaken == isTaken ? 0 : isTaken ? -1 : 1);
-        log.record(request.status(), clock.instant(), trimToNull(request.note()));
+        log.record(request.status(), clock.instant(), Text.trimToNull(request.note()));
         DoseLog saved = doseLogs.save(log);
         return DoseResponse.of(medication, saved.getScheduledAt(), saved.getStatus(), saved);
     }
@@ -160,9 +161,5 @@ public class DoseService {
         if (ChronoUnit.DAYS.between(from, to) >= MAX_RANGE_DAYS) {
             throw ApiException.badRequest("Pick a range of at most " + MAX_RANGE_DAYS + " days");
         }
-    }
-
-    private static String trimToNull(String s) {
-        return s == null || s.isBlank() ? null : s.trim();
     }
 }

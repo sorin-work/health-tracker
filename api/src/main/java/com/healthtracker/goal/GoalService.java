@@ -3,6 +3,7 @@ package com.healthtracker.goal;
 import com.healthtracker.activity.Activity;
 import com.healthtracker.activity.ActivityRepository;
 import com.healthtracker.common.ApiException;
+import com.healthtracker.common.Text;
 import com.healthtracker.goal.dto.GoalRequest;
 import com.healthtracker.goal.dto.GoalResponse;
 import com.healthtracker.user.UserService;
@@ -82,7 +83,7 @@ public class GoalService {
             goal.setStartValue(start);
         }
         goal.setTargetDate(request.targetDate());
-        goal.setNotes(trimToNull(request.notes()));
+        goal.setNotes(Text.trimToNull(request.notes()));
         return toResponse(goals.save(goal), metrics, today);
     }
 
@@ -100,7 +101,7 @@ public class GoalService {
             goal.setStartValue(request.startValue());
         }
         goal.setTargetDate(request.targetDate());
-        goal.setNotes(trimToNull(request.notes()));
+        goal.setNotes(Text.trimToNull(request.notes()));
         goal.setAchievedAt(null);
         return toResponse(goal, metrics(userId, zone, today), today);
     }
@@ -176,9 +177,5 @@ public class GoalService {
         if (targetDate != null && !targetDate.isAfter(start)) {
             throw ApiException.badRequest("Target date must be in the future");
         }
-    }
-
-    private static String trimToNull(String s) {
-        return s == null || s.isBlank() ? null : s.trim();
     }
 }

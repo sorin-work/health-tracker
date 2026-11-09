@@ -3,6 +3,7 @@ package com.healthtracker.symptom;
 import com.healthtracker.common.ApiException;
 import com.healthtracker.common.DateRange;
 import com.healthtracker.common.PageResponse;
+import com.healthtracker.common.Text;
 import com.healthtracker.symptom.dto.SymptomRequest;
 import com.healthtracker.symptom.dto.SymptomResponse;
 import com.healthtracker.user.UserService;
@@ -91,7 +92,7 @@ public class SymptomService {
         symptom.setSeverity(request.severity());
         symptom.setOccurredAt(request.occurredAt());
         symptom.setDurationMinutes(request.durationMinutes());
-        symptom.setNotes(request.notes() == null || request.notes().isBlank() ? null : request.notes().trim());
+        symptom.setNotes(Text.trimToNull(request.notes()));
         symptom.setTags(normalizeTags(request.tags()));
     }
 

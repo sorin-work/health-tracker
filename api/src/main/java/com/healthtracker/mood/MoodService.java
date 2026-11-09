@@ -3,6 +3,7 @@ package com.healthtracker.mood;
 import com.healthtracker.common.ApiException;
 import com.healthtracker.common.DateRange;
 import com.healthtracker.common.PageResponse;
+import com.healthtracker.common.Text;
 import com.healthtracker.mood.dto.MoodDay;
 import com.healthtracker.mood.dto.MoodRequest;
 import com.healthtracker.mood.dto.MoodResponse;
@@ -89,6 +90,6 @@ public class MoodService {
         entry.setMood(request.mood());
         entry.setEnergy(request.energy());
         entry.setRecordedAt(request.recordedAt());
-        entry.setNote(request.note() == null || request.note().isBlank() ? null : request.note().trim());
+        entry.setNote(Text.trimToNull(request.note()));
     }
 }

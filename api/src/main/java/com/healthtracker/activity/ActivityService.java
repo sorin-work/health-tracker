@@ -6,6 +6,7 @@ import com.healthtracker.activity.dto.WeeklyActivity;
 import com.healthtracker.common.ApiException;
 import com.healthtracker.common.DateRange;
 import com.healthtracker.common.PageResponse;
+import com.healthtracker.common.Text;
 import com.healthtracker.user.UserService;
 import java.time.Clock;
 import java.time.LocalDate;
@@ -90,6 +91,6 @@ public class ActivityService {
         activity.setDistanceKm(request.distanceKm());
         activity.setSteps(request.steps());
         activity.setCaloriesKcal(request.caloriesKcal());
-        activity.setNotes(request.notes() == null || request.notes().isBlank() ? null : request.notes().trim());
+        activity.setNotes(Text.trimToNull(request.notes()));
     }
 }

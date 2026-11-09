@@ -3,6 +3,7 @@ package com.healthtracker.vital;
 import com.healthtracker.common.ApiException;
 import com.healthtracker.common.DateRange;
 import com.healthtracker.common.PageResponse;
+import com.healthtracker.common.Text;
 import com.healthtracker.range.Flag;
 import com.healthtracker.range.RangeFlagger;
 import com.healthtracker.range.RangeService;
@@ -178,7 +179,7 @@ public class VitalService {
         reading.setSecondaryValue(request.secondaryValue());
         reading.setGlucoseContext(request.glucoseContext());
         reading.setMeasuredAt(request.measuredAt());
-        reading.setNotes(blankToNull(request.notes()));
+        reading.setNotes(Text.trimToNull(request.notes()));
     }
 
     static VitalReadingResponse toResponse(VitalReading r, RangeFlagger flagger) {
@@ -186,7 +187,4 @@ public class VitalService {
         return VitalReadingResponse.from(r, flag);
     }
 
-    private static String blankToNull(String s) {
-        return s == null || s.isBlank() ? null : s.trim();
-    }
 }
