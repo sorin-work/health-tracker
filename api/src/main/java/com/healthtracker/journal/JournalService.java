@@ -37,8 +37,10 @@ public class JournalService {
     @Transactional(readOnly = true)
     public List<JournalResponse> entries(Long userId, LocalDate from, LocalDate to, String query) {
         DateRange range = DateRange.of(from, to, userService.zoneOf(userId));
-        String text = query == null || query.isBlank() ? null : JournalRepository.likePattern(query.trim());
-        return journal.search(userId, range.from(), range.to(), text).stream()
+        List<JournalEntry> entries = query == null || query.isBlank()
+                ? journal.findByUserIdAndEntryDateBetweenOrderByEntryDateDescCreatedAtDesc(userId, range.from(), range.to())
+                : journal.search(userId, range.from(), range.to(), JournalRepository.likePattern(query.trim()));
+        return entries.stream()
                 .map(JournalResponse::from)
                 .toList();
     }

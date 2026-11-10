@@ -195,8 +195,11 @@ class RepositoryTest {
 
         assertThat(journal.search(userId, from, to, "DIZZ")).extracting(JournalEntry::getEntryDate)
                 .containsExactly(LocalDate.of(2026, 7, 2), LocalDate.of(2026, 7, 1));
-        assertThat(journal.search(userId, from, to, null)).hasSize(3);
-        assertThat(journal.search(userId, from, LocalDate.of(2026, 7, 1), null)).hasSize(1);
+        assertThat(journal.findByUserIdAndEntryDateBetweenOrderByEntryDateDescCreatedAtDesc(userId, from, to))
+                .hasSize(3);
+        assertThat(journal.findByUserIdAndEntryDateBetweenOrderByEntryDateDescCreatedAtDesc(
+                        userId, from, LocalDate.of(2026, 7, 1)))
+                .hasSize(1);
     }
 
     @Test
