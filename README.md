@@ -256,3 +256,8 @@ docker-compose.yml
   a dose quantity of 1 and two times.
 - One user per account; there is no sharing or caregiver access. Export the CSV
   files to share data.
+
+## Roadmap
+
+Ideas for what might come next, with notes on how I would build them, are in
+[ROADMAP.md](ROADMAP.md).
